@@ -1089,6 +1089,20 @@ module TypeScript {
 
             var funcName = funcDecl.getNameText();
 
+			//TS to Nano - begin
+
+			//Print NanoJS comment-style signature here
+
+			this.emitIndent();
+			 
+			this.writeToOutput("/*@ ");
+			//TODO: handle no name 
+			this.writeToOutput(funcName + " :: " + funcDecl.getTypeAnnotation().toString());
+			this.writeLineToOutput(" */");
+
+			//TS to Nano - end
+
+
             if (((temp !== EmitContainer.Constructor) ||
                 ((funcDecl.getFunctionFlags() & FunctionFlags.Method) === FunctionFlags.None))) {
                 this.recordSourceMappingStart(funcDecl);

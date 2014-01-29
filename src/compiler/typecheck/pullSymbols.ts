@@ -1981,6 +1981,116 @@ module TypeScript {
 
             return isVisible;
         }
+
+
+		//TS to Nano - begin
+
+		/** toNJSType: Convert a PullTypeSymbol to a NanoJS type */
+		public toNJSType(): NJSType {
+
+			if (this.toString() === "any") {
+				return TAny;
+			}
+
+			if (this.isPrimitive()) {
+				if ((<PullPrimitiveTypeSymbol>this).isStringConstant()) {
+					throw new Error("StringConstants shouldn't occur");
+				}
+				if (this.toString() === "string") return TString;
+				if (this.toString() === "number") return TNumber;
+				if (this.toString() === "boolean") return TBoolean;
+				return new TError(this.toString());
+			}
+
+			if (this.isArray()) {
+				return new TArray(this.getElementType().toNJSType());
+			}
+
+			if (this.isEnum()) {
+				return TNumber;
+			}
+
+			if (this.isClass() || this.isInterface()) {
+				var tArgs = this.getTypeArguments();
+				var rtPars: NJSType[] = tArgs ?
+					//Generic type with instantiated type parameters
+					rtPars = tArgs.map((p: PullTypeSymbol) => { return p.toNJSType(); }) : 
+					//Generic type with un-instantiated type parameters
+					rtPars = this.getTypeParameters().map((p: PullTypeParameterSymbol) => { return p.toNJSTypeParameter(); });
+
+				return new TTypeReference(this.fullName().split("<")[0], rtPars);
+			}
+
+			if (this.isTypeParameter()) {
+				return (<PullTypeParameterSymbol>this).toNJSTypeParameter();
+			}
+
+			if (this.isFunction()) {
+
+				var sigToRtType = function (sig: PullSignatureSymbol) {
+					var paramTypes: BoundedNJSType[] = sig.parameters.map((p: PullSymbol) => {
+						return new BoundedNJSType(p.name, p.type.toNJSType());
+					});
+					var retType: NJSType = sig.returnType.toNJSType();
+					return new TFunction(paramTypes, retType);
+				}
+				var sigs = this.getCallSignatures();
+				//TODO: Overloads !!!
+				var filteredSigs = sigs.filter((sig: PullSignatureSymbol) => {
+					sig.invalidate();
+					return !sig.isStringConstantOverloadSignature();
+				});
+
+				return (filteredSigs.length === 1) ? <NJSType> sigToRtType(filteredSigs[0]) : null;
+					//(<DRT.RtType>new DRT.RtOverloadedFunction(filteredSigs.map(sigToRtType)));
+			}
+
+			if (this.kind === PullElementKind.ObjectType) {
+				////Is this type already in the type hierarchy?
+				//if (this.isInDebugModeTypeHierarchy) {
+				//	//Then create a reference to there instead of dumping the whole type
+				//	var isGen = this.isGeneric();
+				//	var rtPars: DRT.RtType[] = [];
+				//	if (isGen) {
+				//		var tArgs = this.getTypeArguments();
+				//		if (tArgs) {
+				//			//Generic type with instantiated type parameters
+				//			rtPars = tArgs.map((p: PullTypeSymbol) => {
+				//				return p.toDebugModeRtType();
+				//			});
+				//		}
+				//		else {
+				//			//Generic type with un-instantiated type parameters
+				//			rtPars = this.getTypeParameters().map((p: PullTypeParameterSymbol) => {
+				//				return p.toDebugModeRtTypeParam();
+				//			});
+				//		}
+				//	}
+				//	return new DRT.RtTypeReference(this.pullSymbolID, this.name, isGen, rtPars);
+				//}
+				////Resort to object types
+				//var methods = this.getAllMembers(PullElementKind.Method, true);
+				//var properties = this.getAllMembers(PullElementKind.Property, true);
+				//var fields: { [fields: string]: DRT.RtType } = {};
+				//methods.concat(properties).forEach((s: PullSymbol) => { fields[s.name] = s.type.toDebugModeRtType(); })
+				//return new DRT.RtObject(fields);
+			}
+
+			//if (CompilationSettings.VERBOSE) {
+			//	console.log("Not supported in toDebugModeAST[" + PullElementKind[this.kind] + "]: " + this.toString().substring(0, 120));
+			//}
+			return TAny;
+		}
+
+
+		public toNJSTypeParameter() {
+			return new TTypeParam(this.toString());
+		}
+
+		//TS to Nano - end
+
+
+
     }
 
     export class PullPrimitiveTypeSymbol extends PullTypeSymbol {

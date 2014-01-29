@@ -193,6 +193,22 @@ module TypeScript {
                 astArrayStructuralEquals(this.preComments(), ast.preComments(), includingPosition) &&
                 astArrayStructuralEquals(this.postComments(), ast.postComments(), includingPosition);
         }
+
+		//TS to Nano - begin
+		private nJSType: NJSType = null;
+
+		public setTypeAnnotation(s: NJSType) {
+			if (this.nJSType != null) {
+				throw Error("PullTypeSymbol already set");
+			}
+			this.nJSType = s;
+		}
+
+		public getTypeAnnotation(): NJSType {
+			return this.nJSType ? this.nJSType : new TError(NodeType[this.nodeType()]);
+		}
+
+		//TS to Nano - end
     }
 
     export class ASTList extends AST {

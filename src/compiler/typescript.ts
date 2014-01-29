@@ -47,6 +47,7 @@
 ///<reference path='typecheck\pullSymbolBinder.ts' />
 ///<reference path='typecheck\semanticDiagnostic.ts' />
 ///<reference path='typecheck\pullHelpers.ts' />
+///<reference path='typecheck\translate.ts' />
 ///<reference path='syntaxTreeToAstVisitor.ts' />
 
 module TypeScript {

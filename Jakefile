@@ -126,6 +126,7 @@ var compilerSources = [
 	"typecheck/pullTypeResolution.ts",
 	"typecheck/pullTypeResolutionContext.ts",
 	"typecheck/SemanticDiagnostic.ts",
+	"typecheck/translate.ts",
 	"typescript.ts"
 ].map(function (f) {
 	return path.join(compilerDirectory, f);

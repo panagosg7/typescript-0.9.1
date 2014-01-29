@@ -22,7 +22,7 @@ module TypeScript {
         private rdCache: IPullResolutionData[] = [];
         private nextUp: number = 0;
 
-        constructor() {
+		constructor() {
             for (var i = 0; i < this.cacheSize; i++) {
                 this.rdCache[i] = {
                     actuals: <PullTypeSymbol[]>[],
@@ -3996,8 +3996,8 @@ module TypeScript {
                 case NodeType.TypeParameter:
                     return this.resolveTypeParameterDeclaration(<TypeParameter>ast, context);
 
-                case NodeType.ImportDeclaration:
-                    return this.resolveImportDeclaration(<ImportDeclaration>ast, context);
+				case NodeType.ImportDeclaration:
+					return this.resolveImportDeclaration(<ImportDeclaration>ast, context);
 
                 case NodeType.ObjectLiteralExpression:
                     return this.resolveObjectLiteralExpression(ast, inContextuallyTypedAssignment, enclosingDecl, context);
@@ -8911,7 +8911,7 @@ module TypeScript {
                     this.relateFunctionSignatureToTypeParameters(objectSignatures[j], parameterSignature, argContext, enclosingDecl, context);
                 }
             }
-        }
+		}
 
         private relateArrayTypeToTypeParameters(argArrayType: PullTypeSymbol,
             parameterArrayType: PullTypeSymbol,
@@ -8982,14 +8982,25 @@ module TypeScript {
 
             resolver.resolveAST(script.moduleElements, false, scriptDecl, context);
 
+			//TS to Nano - begin
+			//TODO: Add flag here
+
+			var translator = new Translator(resolver);
+
+			if (scriptName.indexOf(".d.ts") == -1) {
+				translator.annotate(script.moduleElements);
+			}
+
+			//TS to Nano - end
+
             resolver.validateVariableDeclarationGroups(scriptDecl, context);
 
             PullTypeResolver.globalTypeCheckPhase++;
             var callBack: { (): void } = null;
 
-            while (PullTypeResolver.typeCheckCallBacks.length) {
-                callBack = PullTypeResolver.typeCheckCallBacks[PullTypeResolver.typeCheckCallBacks.length - 1];
-                PullTypeResolver.typeCheckCallBacks.pop();
+			while (PullTypeResolver.typeCheckCallBacks.length) {
+				callBack = PullTypeResolver.typeCheckCallBacks[PullTypeResolver.typeCheckCallBacks.length - 1];
+				PullTypeResolver.typeCheckCallBacks.pop();
                 callBack();
             }
 
