@@ -25,3 +25,8 @@ Scalable JavaScript development with types, classes and modules.
         - You can also override the host or specify a test for this command. Use host=<hostName> or tests=<testPath>. 
     - jake baseline-accept - This replaces the baseline test results with the results obtained from jake runtests. 
     - jake -T lists the above commands. 
+
+
+## Oneline build command:
+  
+  node bin/tsc.js -out built/local/tsc.js -removeComments -propagateEnumConstants -declaration -noImplicitAny --module commonjs src/compiler/tsc.ts
