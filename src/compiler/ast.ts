@@ -195,17 +195,14 @@ module TypeScript {
         }
 
 		//TS to Nano - begin
-		private nJSType: NJSType = null;
+		private type: PullTypeSymbol = null;
 
-		public setTypeAnnotation(s: NJSType) {
-			if (this.nJSType != null) {
-				throw Error("PullTypeSymbol already set");
-			}
-			this.nJSType = s;
+		public setTypeAnnotation(s: PullTypeSymbol) {
+			this.type = s;
 		}
 
-		public getTypeAnnotation(): NJSType {
-			return this.nJSType ? this.nJSType : new TError(NodeType[this.nodeType()]);
+		public getTypeAnnotation(): PullTypeSymbol {
+			return this.type;
 		}
 
 		//TS to Nano - end
@@ -953,6 +950,19 @@ module TypeScript {
         public isStatic() { return hasFlag(this.getFunctionFlags(), FunctionFlags.Static); }
 
         public isSignature() { return (this.getFunctionFlags() & FunctionFlags.Signature) !== FunctionFlags.None; }
+
+
+		//NanoJS begin
+		private signature: PullSignatureSymbol = null;
+
+		public setSignarure(s: PullSignatureSymbol) {
+			this.signature = s;
+		}
+
+		public getSignature(): PullSignatureSymbol {
+			return this.signature;
+		}
+		//NanoJS end
     }
 
     export class Script extends AST {

@@ -984,6 +984,18 @@ module TypeScript {
 
             return builder;
         }
+
+		//NanoJS begin
+		public toNJSType(): NJSType {
+
+			return new TFunction(
+				this.getTypeParameters().map(p => p.type.toNJSTypeParameter()),
+				this.parameters.map(p => new BoundedNJSType(p.name, p.type ? p.type.toNJSType() : TAny)),
+				this.returnType.toNJSType());
+
+		}
+		//NanoJS end
+
     }
 
     export class PullTypeSymbol extends PullSymbol {
@@ -2011,14 +2023,16 @@ module TypeScript {
 			}
 
 			if (this.isClass() || this.isInterface()) {
-				var tArgs = this.getTypeArguments();
-				var rtPars: NJSType[] = tArgs ?
-					//Generic type with instantiated type parameters
-					rtPars = tArgs.map((p: PullTypeSymbol) => { return p.toNJSType(); }) : 
-					//Generic type with un-instantiated type parameters
-					rtPars = this.getTypeParameters().map((p: PullTypeParameterSymbol) => { return p.toNJSTypeParameter(); });
+				var tArgs	= this.getTypeArguments();
 
-				return new TTypeReference(this.fullName().split("<")[0], rtPars);
+				//console.log(tArgs.map((t: PullTypeSymbol) => {
+				//	return t.toString();
+				//}).join(", "));
+
+				var tParams = this.getTypeParameters().map(p => p.toNJSTypeParameter());
+				var params = tArgs.map(p => p.toNJSType()); 
+
+				return new TTypeReference(this.fullName().split("<")[0], params);
 			}
 
 			if (this.isTypeParameter()) {
@@ -2026,14 +2040,6 @@ module TypeScript {
 			}
 
 			if (this.isFunction()) {
-
-				var sigToRtType = function (sig: PullSignatureSymbol) {
-					var paramTypes: BoundedNJSType[] = sig.parameters.map((p: PullSymbol) => {
-						return new BoundedNJSType(p.name, p.type.toNJSType());
-					});
-					var retType: NJSType = sig.returnType.toNJSType();
-					return new TFunction(paramTypes, retType);
-				}
 				var sigs = this.getCallSignatures();
 				//TODO: Overloads !!!
 				var filteredSigs = sigs.filter((sig: PullSignatureSymbol) => {
@@ -2041,7 +2047,7 @@ module TypeScript {
 					return !sig.isStringConstantOverloadSignature();
 				});
 
-				return (filteredSigs.length === 1) ? <NJSType> sigToRtType(filteredSigs[0]) : null;
+				return (filteredSigs.length === 1) ? <NJSType> filteredSigs[0].toNJSType() : null;
 					//(<DRT.RtType>new DRT.RtOverloadedFunction(filteredSigs.map(sigToRtType)));
 			}
 
@@ -2088,8 +2094,6 @@ module TypeScript {
 		}
 
 		//TS to Nano - end
-
-
 
     }
 

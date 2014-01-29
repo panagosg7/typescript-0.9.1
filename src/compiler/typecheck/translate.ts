@@ -76,34 +76,36 @@ module TypeScript {
 		constructor(public fields: TField[]) { } 
 
 		public toString(): string {
-
-			return "{ " + 
-				this.fields.map((f: TField) => {
-					return f.symbol + ": " + f.type.toString();
-				}).join(", ") + " }";
-
+			var s = "";
+			s += "{ "; 
+			s += this.fields.map(f => (f.symbol + ": " + f.type.toString())).join(", ");
+			s += " }";
+			return s;
 		}
 
 	}
 
 	export class TFunction implements NJSType {
 
-		constructor(private argTs: BoundedNJSType[], private returnT: NJSType) { }
+		constructor(private tParams: TTypeParam[], private argTs: BoundedNJSType[], private returnT: NJSType) { }
 
 		public toString(): string {
-
-			return "( " +
-				this.argTs.map((arg: BoundedNJSType) => {
-					return arg.toString();
-				}).join(", ") + " ) => " + this.returnT.toString();
-
+			var s = "";
+			if (this.tParams.length > 0) {
+				s += "forall " + this.tParams.map(p => p.toString()).join(" ") + " . ";
+			}
+			s += "( ";
+			s += this.argTs.map(b => b.toString()).join(", ");
+			s += " ) => ";
+			s += this.returnT.toString();
+			return s;
 		}
 
 	}
 
 	export class TArray implements NJSType {
 
-		constructor(public eltT: NJSType) { }
+		constructor(private eltT: NJSType) { }
 
 		public toString(): string {
 			return "[ " + this.eltT.toString() + " ]"; 
@@ -113,10 +115,10 @@ module TypeScript {
 
 	export class TTypeReference implements NJSType {
 
-		constructor(public name: string, public params: NJSType[]) { }
+		constructor(private name: string, private params: NJSType[]) { }
 
 		public toString(): string {
-			return this.name + " [ " + this.params.map((a:NJSType) => a.toString()).join(", ") + " ]"; 
+			return this.name + " [ " + this.params.map(t => t.toString()).join(", ") + " ]"; 
 		}
 
 	}
@@ -177,11 +179,14 @@ module TypeScript {
 						if (type == null) {
 							throw Error("Function Declaration has no type");
 						}
+
+
 						var nJSType = type.toNJSType();
-						console.log(func.decl.name + " :TSC: " + type.toString());
-						console.log(func.decl.name + " :NJS: " + nJSType.toString());
-						console.log();
-						func.setTypeAnnotation(type.toNJSType());
+						//console.log(func.decl.name + " :tsc: " + type.toString());
+						//console.log(func.decl.name + " :NJS: " + nJSType.toString());
+						//console.log(func.arguments.members.map(a => (<Parameter>a).symbol));
+						//console.log();
+						//func.setTypeAnnotation(nJSType);
 						break;
 					//case NodeType.ArrayLiteralExpression:
 					//case NodeType.ThisExpression:

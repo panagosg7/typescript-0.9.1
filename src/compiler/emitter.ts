@@ -1089,18 +1089,17 @@ module TypeScript {
 
             var funcName = funcDecl.getNameText();
 
-			//TS to Nano - begin
-
-			//Print NanoJS comment-style signature here
-
-			this.emitIndent();
-			 
-			this.writeToOutput("/*@ ");
-			//TODO: handle no name 
-			this.writeToOutput(funcName + " :: " + funcDecl.getTypeAnnotation().toString());
+		    //TS to Nano - begin
+            //Print NanoJS comment-style signature he
+            this.writeLineToOutput("");
+            this.emitIndent();
+            this.writeToOutput("/*@ ");
+            //TODO: handle no name 
+			this.writeToOutput(funcName + " :: " + funcDecl.getSignature().toNJSType().toString());
 			this.writeLineToOutput(" */");
+            this.emitIndent();
 
-			//TS to Nano - end
+		    //TS to Nano - end
 
 
             if (((temp !== EmitContainer.Constructor) ||

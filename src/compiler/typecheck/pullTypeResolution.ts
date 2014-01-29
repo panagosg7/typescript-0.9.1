@@ -2884,203 +2884,212 @@ module TypeScript {
             }
         }
 
-        private resolveFunctionDeclaration(funcDeclAST: FunctionDeclaration, context: PullTypeResolutionContext): PullSymbol {
+		private resolveFunctionDeclaration(funcDeclAST: FunctionDeclaration, context: PullTypeResolutionContext): PullSymbol {
 
-            var funcDecl: PullDecl = this.getDeclForAST(funcDeclAST);
+			var funcDecl: PullDecl = this.getDeclForAST(funcDeclAST);
 
-            var funcSymbol = funcDecl.getSymbol();
+			var funcSymbol = funcDecl.getSymbol();
 
-            var signature: PullSignatureSymbol = funcDecl.getSpecializingSignatureSymbol();
+			var signature: PullSignatureSymbol = funcDecl.getSpecializingSignatureSymbol();
 
-            var hadError = false;
+			var hadError = false;
 
-            var isConstructor = funcDeclAST.isConstructor || hasFlag(funcDeclAST.getFunctionFlags(), FunctionFlags.ConstructMember);
+			var isConstructor = funcDeclAST.isConstructor || hasFlag(funcDeclAST.getFunctionFlags(), FunctionFlags.ConstructMember);
 
-            if (signature) {
+			if (signature) {
 
-                if (signature.isResolved) {
-                    this.typeCheckFunctionDeclaration(funcDeclAST, funcDecl, signature, context);
-                    return funcSymbol;
-                }
+				if (signature.isResolved) {
+					this.typeCheckFunctionDeclaration(funcDeclAST, funcDecl, signature, context);
+					return funcSymbol;
+				}
 
-                if (isConstructor && !signature.inResolution) {
-                    var classAST = funcDeclAST.classDecl;
+				if (isConstructor && !signature.inResolution) {
+					var classAST = funcDeclAST.classDecl;
 
-                    if (classAST) {
-                        var classDecl = this.getDeclForAST(classAST);
-                        var classSymbol = classDecl.getSymbol();
+					if (classAST) {
+						var classDecl = this.getDeclForAST(classAST);
+						var classSymbol = classDecl.getSymbol();
 
-                        if (!classSymbol.isResolved && !classSymbol.inResolution) {
-                            this.resolveDeclaredSymbol(classSymbol, this.getEnclosingDecl(classDecl), context);
-                        }
-                    }
-                }
+						if (!classSymbol.isResolved && !classSymbol.inResolution) {
+							this.resolveDeclaredSymbol(classSymbol, this.getEnclosingDecl(classDecl), context);
+						}
+					}
+				}
 
-                var diagnostic: Diagnostic;
-                // Save this in case we had set the function type to any because of a recursive reference.
-                var functionTypeSymbol = funcSymbol && funcSymbol.type;
+				var diagnostic: Diagnostic;
+				// Save this in case we had set the function type to any because of a recursive reference.
+				var functionTypeSymbol = funcSymbol && funcSymbol.type;
 
-                if (signature.inResolution) {
+				if (signature.inResolution) {
 
-                    // try to set the return type, even though we may be lacking in some information
-                    if (funcDeclAST.returnTypeAnnotation) {
-                        var returnTypeSymbol = this.resolveTypeReference(<TypeReference>funcDeclAST.returnTypeAnnotation, funcDecl, context);
-                        if (!returnTypeSymbol) {
-                            diagnostic = context.postError(this.unitPath, funcDeclAST.returnTypeAnnotation.minChar, funcDeclAST.returnTypeAnnotation.getLength(), DiagnosticCode.Cannot_resolve_return_type_reference, null, funcDecl);
-                            signature.returnType = this.getNewErrorTypeSymbol(diagnostic);
-                            hadError = true;
-                        } else {
-                            if (this.isTypeArgumentOrWrapper(returnTypeSymbol)) {
-                                signature.hasAGenericParameter = true;
-                                if (funcSymbol) {
-                                    funcSymbol.type.setHasGenericSignature();
-                                }
-                            }
-                            signature.returnType = returnTypeSymbol;
+					// try to set the return type, even though we may be lacking in some information
+					if (funcDeclAST.returnTypeAnnotation) {
+						var returnTypeSymbol = this.resolveTypeReference(<TypeReference>funcDeclAST.returnTypeAnnotation, funcDecl, context);
+						if (!returnTypeSymbol) {
+							diagnostic = context.postError(this.unitPath, funcDeclAST.returnTypeAnnotation.minChar, funcDeclAST.returnTypeAnnotation.getLength(), DiagnosticCode.Cannot_resolve_return_type_reference, null, funcDecl);
+							signature.returnType = this.getNewErrorTypeSymbol(diagnostic);
+							hadError = true;
+						} else {
+							if (this.isTypeArgumentOrWrapper(returnTypeSymbol)) {
+								signature.hasAGenericParameter = true;
+								if (funcSymbol) {
+									funcSymbol.type.setHasGenericSignature();
+								}
+							}
+							signature.returnType = returnTypeSymbol;
 
-                            if (isConstructor && returnTypeSymbol === this.semanticInfoChain.voidTypeSymbol) {
-                                context.postError(this.unitPath, funcDeclAST.minChar, funcDeclAST.getLength(), DiagnosticCode.Constructors_cannot_have_a_return_type_of_void, null, funcDecl);
-                            }
-                        }
-                    }
-                    else {
-                        signature.returnType = this.semanticInfoChain.anyTypeSymbol;
-                    }
+							if (isConstructor && returnTypeSymbol === this.semanticInfoChain.voidTypeSymbol) {
+								context.postError(this.unitPath, funcDeclAST.minChar, funcDeclAST.getLength(), DiagnosticCode.Constructors_cannot_have_a_return_type_of_void, null, funcDecl);
+							}
+						}
+					}
+					else {
+						signature.returnType = this.semanticInfoChain.anyTypeSymbol;
+					}
 
-                    if (funcSymbol) {
-                        funcSymbol.setUnresolved();
-                        if (funcSymbol.type === this.semanticInfoChain.anyTypeSymbol) {
-                            funcSymbol.type = functionTypeSymbol;
-                        }
-                    }
-                    signature.setResolved();
-                    return funcSymbol;
-                }
+					if (funcSymbol) {
+						funcSymbol.setUnresolved();
+						if (funcSymbol.type === this.semanticInfoChain.anyTypeSymbol) {
+							funcSymbol.type = functionTypeSymbol;
+						}
+					}
+					signature.setResolved();
+					return funcSymbol;
+				}
 
-                if (funcSymbol) {
-                    funcSymbol.startResolving();
-                }
-                signature.startResolving();
+				if (funcSymbol) {
+					funcSymbol.startResolving();
+				}
+				signature.startResolving();
 
-                if (funcDeclAST.typeArguments) {
-                    for (var i = 0; i < funcDeclAST.typeArguments.members.length; i++) {
-                        this.resolveTypeParameterDeclaration(<TypeParameter>funcDeclAST.typeArguments.members[i], context);
-                    }
-                }
+				if (funcDeclAST.typeArguments) {
+					for (var i = 0; i < funcDeclAST.typeArguments.members.length; i++) {
+						this.resolveTypeParameterDeclaration(<TypeParameter>funcDeclAST.typeArguments.members[i], context);
+					}
+				}
 
-                // resolve parameter type annotations as necessary
+				// resolve parameter type annotations as necessary
 
-                if (funcDeclAST.arguments) {
-                    var prevInConstructorArguments = context.inConstructorArguments;
-                    context.inConstructorArguments = isConstructor;
-                    for (var i = 0; i < funcDeclAST.arguments.members.length; i++) {
-                        this.resolveVariableDeclaration(<BoundDecl>funcDeclAST.arguments.members[i], context, funcDecl);
-                    }
-                    context.inConstructorArguments = prevInConstructorArguments;
-                }
+				if (funcDeclAST.arguments) {
+					var prevInConstructorArguments = context.inConstructorArguments;
+					context.inConstructorArguments = isConstructor;
+					for (var i = 0; i < funcDeclAST.arguments.members.length; i++) {
+						this.resolveVariableDeclaration(<BoundDecl>funcDeclAST.arguments.members[i], context, funcDecl);
+					}
+					context.inConstructorArguments = prevInConstructorArguments;
+				}
 
-                if (signature.isGeneric()) {
-                    // PULLREVIEW: This is split into a spearate if statement to make debugging slightly easier...
-                    if (funcSymbol) {
-                        funcSymbol.type.setHasGenericSignature();
-                    }
-                }
+				if (signature.isGeneric()) {
+					// PULLREVIEW: This is split into a spearate if statement to make debugging slightly easier...
+					if (funcSymbol) {
+						funcSymbol.type.setHasGenericSignature();
+					}
+				}
 
-                // resolve the return type annotation
-                if (funcDeclAST.returnTypeAnnotation) {
+				// resolve the return type annotation
+				if (funcDeclAST.returnTypeAnnotation) {
 
-                    // We may have a return type from a previous resolution - if the function's generic,
-                    // we can reuse it
-                    var prevReturnTypeSymbol = signature.returnType;
+					// We may have a return type from a previous resolution - if the function's generic,
+					// we can reuse it
+					var prevReturnTypeSymbol = signature.returnType;
 
-                    // use the funcDecl for the enclosing decl, since we want to pick up any type parameters 
-                    // on the function when resolving the return type
-                    returnTypeSymbol = this.resolveTypeReference(<TypeReference>funcDeclAST.returnTypeAnnotation, funcDecl, context);
+					// use the funcDecl for the enclosing decl, since we want to pick up any type parameters 
+					// on the function when resolving the return type
+					returnTypeSymbol = this.resolveTypeReference(<TypeReference>funcDeclAST.returnTypeAnnotation, funcDecl, context);
 
-                    if (!returnTypeSymbol) {
-                        diagnostic = context.postError(this.unitPath, funcDeclAST.returnTypeAnnotation.minChar, funcDeclAST.returnTypeAnnotation.getLength(), DiagnosticCode.Cannot_resolve_return_type_reference, null, funcDecl);
-                        signature.returnType = this.getNewErrorTypeSymbol(diagnostic);
+					if (!returnTypeSymbol) {
+						diagnostic = context.postError(this.unitPath, funcDeclAST.returnTypeAnnotation.minChar, funcDeclAST.returnTypeAnnotation.getLength(), DiagnosticCode.Cannot_resolve_return_type_reference, null, funcDecl);
+						signature.returnType = this.getNewErrorTypeSymbol(diagnostic);
 
-                        hadError = true;
-                    }
-                    else if (!(this.isTypeArgumentOrWrapper(returnTypeSymbol) && prevReturnTypeSymbol && !this.isTypeArgumentOrWrapper(prevReturnTypeSymbol))) {
-                        if (this.isTypeArgumentOrWrapper(returnTypeSymbol)) {
-                            signature.hasAGenericParameter = true;
+						hadError = true;
+					}
+					else if (!(this.isTypeArgumentOrWrapper(returnTypeSymbol) && prevReturnTypeSymbol && !this.isTypeArgumentOrWrapper(prevReturnTypeSymbol))) {
+						if (this.isTypeArgumentOrWrapper(returnTypeSymbol)) {
+							signature.hasAGenericParameter = true;
 
-                            if (funcSymbol) {
-                                funcSymbol.type.setHasGenericSignature();
-                            }
-                        }
+							if (funcSymbol) {
+								funcSymbol.type.setHasGenericSignature();
+							}
+						}
 
-                        if (this.genericTypeIsUsedWithoutRequiredTypeArguments(returnTypeSymbol, <TypeReference>funcDeclAST.returnTypeAnnotation, context)) {
-                            context.postError(this.unitPath, funcDeclAST.returnTypeAnnotation.minChar, funcDeclAST.returnTypeAnnotation.getLength(), DiagnosticCode.Generic_type_references_must_include_all_type_arguments, null, funcDecl);
-                            returnTypeSymbol = this.specializeTypeToAny(returnTypeSymbol, funcDecl, context);
-                        }
+						if (this.genericTypeIsUsedWithoutRequiredTypeArguments(returnTypeSymbol, <TypeReference>funcDeclAST.returnTypeAnnotation, context)) {
+							context.postError(this.unitPath, funcDeclAST.returnTypeAnnotation.minChar, funcDeclAST.returnTypeAnnotation.getLength(), DiagnosticCode.Generic_type_references_must_include_all_type_arguments, null, funcDecl);
+							returnTypeSymbol = this.specializeTypeToAny(returnTypeSymbol, funcDecl, context);
+						}
 
-                        signature.returnType = returnTypeSymbol;
+						signature.returnType = returnTypeSymbol;
 
-                        if (isConstructor && returnTypeSymbol === this.semanticInfoChain.voidTypeSymbol) {
-                            context.postError(this.unitPath, funcDeclAST.minChar, funcDeclAST.getLength(), DiagnosticCode.Constructors_cannot_have_a_return_type_of_void, null, funcDecl);
-                        }
-                    }
-                }
-                // if there's no return-type annotation
-                //     - if it's not a definition signature, set the return type to 'any'
-                //     - if it's a definition sigature, take the best common type of all return expressions
-                //     - if it's a constructor, we set the return type link during binding
-                else if (!funcDeclAST.isConstructor && !funcDeclAST.isConstructMember()) {
-                    if (funcDeclAST.isSignature()) {
-                        signature.returnType = this.semanticInfoChain.anyTypeSymbol;
-                        var parentDeclFlags = TypeScript.PullElementFlags.None;
-                        if (TypeScript.hasFlag(funcDecl.kind, TypeScript.PullElementKind.Method) ||
-                            TypeScript.hasFlag(funcDecl.kind, TypeScript.PullElementKind.ConstructorMethod)) {
-                            var parentDecl = funcDecl.getParentDecl();
-                            parentDeclFlags = parentDecl.flags;
-                        }
+						if (isConstructor && returnTypeSymbol === this.semanticInfoChain.voidTypeSymbol) {
+							context.postError(this.unitPath, funcDeclAST.minChar, funcDeclAST.getLength(), DiagnosticCode.Constructors_cannot_have_a_return_type_of_void, null, funcDecl);
+						}
+					}
+				}
+				// if there's no return-type annotation
+				//     - if it's not a definition signature, set the return type to 'any'
+				//     - if it's a definition sigature, take the best common type of all return expressions
+				//     - if it's a constructor, we set the return type link during binding
+				else if (!funcDeclAST.isConstructor && !funcDeclAST.isConstructMember()) {
+					if (funcDeclAST.isSignature()) {
+						signature.returnType = this.semanticInfoChain.anyTypeSymbol;
+						var parentDeclFlags = TypeScript.PullElementFlags.None;
+						if (TypeScript.hasFlag(funcDecl.kind, TypeScript.PullElementKind.Method) ||
+							TypeScript.hasFlag(funcDecl.kind, TypeScript.PullElementKind.ConstructorMethod)) {
+							var parentDecl = funcDecl.getParentDecl();
+							parentDeclFlags = parentDecl.flags;
+						}
 
-                        // if the noImplicitAny flag is set to be true, report an error
-                        if (this.compilationSettings.noImplicitAny &&
-                            (!TypeScript.hasFlag(parentDeclFlags, PullElementFlags.Ambient) ||
-                            (TypeScript.hasFlag(parentDeclFlags, PullElementFlags.Ambient) && !TypeScript.hasFlag(funcDecl.flags, PullElementFlags.Private)))) {
-                            var funcDeclASTName = funcDeclAST.name;
-                            if (funcDeclASTName) {
-                                context.postError(this.unitPath, funcDeclAST.minChar, funcDeclAST.getLength(), DiagnosticCode._0_which_lacks_return_type_annotation_implicitly_has_an_any_return_type,
-                                    [funcDeclASTName.actualText], funcDecl);
-                            }
-                            else {
-                                context.postError(this.unitPath, funcDeclAST.minChar, funcDeclAST.getLength(),
-                                    DiagnosticCode.Lambda_Function_which_lacks_return_type_annotation_implicitly_has_an_any_return_type, [], funcDecl);
-                            }
-                        }
-                    }
-                    else {
-                        this.resolveFunctionBodyReturnTypes(funcDeclAST, signature, false, funcDecl, context);
-                    }
-                } else if (funcDeclAST.isConstructMember()) {
-                    if (funcDeclAST.isSignature()) {
-                        signature.returnType = this.semanticInfoChain.anyTypeSymbol;
+						// if the noImplicitAny flag is set to be true, report an error
+						if (this.compilationSettings.noImplicitAny &&
+							(!TypeScript.hasFlag(parentDeclFlags, PullElementFlags.Ambient) ||
+							(TypeScript.hasFlag(parentDeclFlags, PullElementFlags.Ambient) && !TypeScript.hasFlag(funcDecl.flags, PullElementFlags.Private)))) {
+							var funcDeclASTName = funcDeclAST.name;
+							if (funcDeclASTName) {
+								context.postError(this.unitPath, funcDeclAST.minChar, funcDeclAST.getLength(), DiagnosticCode._0_which_lacks_return_type_annotation_implicitly_has_an_any_return_type,
+									[funcDeclASTName.actualText], funcDecl);
+							}
+							else {
+								context.postError(this.unitPath, funcDeclAST.minChar, funcDeclAST.getLength(),
+									DiagnosticCode.Lambda_Function_which_lacks_return_type_annotation_implicitly_has_an_any_return_type, [], funcDecl);
+							}
+						}
+					}
+					else {
+						this.resolveFunctionBodyReturnTypes(funcDeclAST, signature, false, funcDecl, context);
+					}
+				} else if (funcDeclAST.isConstructMember()) {
+					if (funcDeclAST.isSignature()) {
+						signature.returnType = this.semanticInfoChain.anyTypeSymbol;
 
-                        // if the noImplicitAny flag is set to be true, report an error
-                        if (this.compilationSettings.noImplicitAny) {
-                            context.postError(this.unitPath, funcDeclAST.minChar, funcDeclAST.getLength(), DiagnosticCode.Constructor_signature_which_lacks_return_type_annotation_implicitly_has_an_any_return_type,
-                                [], funcDecl);
-                        }
-                    }
-                }
+						// if the noImplicitAny flag is set to be true, report an error
+						if (this.compilationSettings.noImplicitAny) {
+							context.postError(this.unitPath, funcDeclAST.minChar, funcDeclAST.getLength(), DiagnosticCode.Constructor_signature_which_lacks_return_type_annotation_implicitly_has_an_any_return_type,
+								[], funcDecl);
+						}
+					}
+				}
 
-                if (!hadError) {
-                    if (funcSymbol) {
-                        funcSymbol.setUnresolved();
-                        if (funcSymbol.type === this.semanticInfoChain.anyTypeSymbol) {
-                            funcSymbol.type = functionTypeSymbol;
-                        }
-                    }
-                    signature.setResolved();
-                }
-            }
+				if (!hadError) {
+					if (funcSymbol) {
+						funcSymbol.setUnresolved();
+						if (funcSymbol.type === this.semanticInfoChain.anyTypeSymbol) {
+							funcSymbol.type = functionTypeSymbol;
+						}
+					}
+					signature.setResolved();
+				}
+			}
 
-            this.typeCheckFunctionDeclaration(funcDeclAST, funcDecl, signature, context);
-            return funcSymbol;
+			this.typeCheckFunctionDeclaration(funcDeclAST, funcDecl, signature, context);
+
+			//TS to Nano - begin
+			var annot = funcDeclAST.getTypeAnnotation();
+			if (annot && !this.sourceIsSubtypeOfTarget(annot, funcSymbol.type, context) && !this.sourceIsSubtypeOfTarget(funcSymbol.type, annot, context)) {
+				throw new Error("Cannot reassign irrelevant type annotation. Existing:\n" + annot.toString() + "\nNew:\n" + funcSymbol.type.toString());
+			}
+			funcDeclAST.setSignarure(signature);
+			//TS to Nano - end
+
+			return funcSymbol;
         }
 
         private resolveGetAccessorDeclaration(funcDeclAST: FunctionDeclaration, context: PullTypeResolutionContext): PullSymbol {
@@ -8988,7 +8997,7 @@ module TypeScript {
 			var translator = new Translator(resolver);
 
 			if (scriptName.indexOf(".d.ts") == -1) {
-				translator.annotate(script.moduleElements);
+				//translator.annotate(script.moduleElements);
 			}
 
 			//TS to Nano - end
