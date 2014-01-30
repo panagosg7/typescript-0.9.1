@@ -85,7 +85,7 @@ module TypeScript {
 
 	}
 
-	export class TFunction implements NJSType {
+	export class TFunctionSigMember {
 
 		constructor(private tParams: TTypeParam[], private argTs: BoundedNJSType[], private returnT: NJSType) { }
 
@@ -99,6 +99,24 @@ module TypeScript {
 			s += " ) => ";
 			s += this.returnT.toString();
 			return s;
+		}
+
+	}
+
+	export class TFunctionSig implements NJSType {
+
+		constructor(private signatures: TFunctionSigMember[]) { }
+
+		public toString(): string {
+			if (this.signatures && this.signatures.length > 0) {
+				if (this.signatures.length == 1) {
+					return this.signatures[0].toString();
+				}
+				else {
+					return "\n" + this.signatures.map(s => "\t/\\ " + s.toString()).join("\n");
+				}
+
+			}
 		}
 
 	}

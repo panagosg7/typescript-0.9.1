@@ -96,6 +96,11 @@ module TypeScript {
         private _cachedIArgumentsInterfaceType: PullTypeSymbol = null;
         private _cachedRegExpInterfaceType: PullTypeSymbol = null;
 
+
+		//NanoJS
+		private _emitInterfaces: boolean = false;
+
+
         static typeCheckCallBacks: { (): void ; }[] = [];
 
         private cachedFunctionArgumentsSymbol: PullSymbol = null;
@@ -1394,6 +1399,7 @@ module TypeScript {
         }
 
         private resolveInterfaceDeclaration(interfaceDeclAST: TypeDeclaration, context: PullTypeResolutionContext): PullTypeSymbol {
+
             var interfaceDecl: PullDecl = this.getDeclForAST(interfaceDeclAST);
             var interfaceDeclSymbol = <PullTypeSymbol>interfaceDecl.getSymbol();
 
@@ -3081,13 +3087,17 @@ module TypeScript {
 
 			this.typeCheckFunctionDeclaration(funcDeclAST, funcDecl, signature, context);
 
-			//TS to Nano - begin
+			//NanoJS - begin
 			var annot = funcDeclAST.getTypeAnnotation();
 			if (annot && !this.sourceIsSubtypeOfTarget(annot, funcSymbol.type, context) && !this.sourceIsSubtypeOfTarget(funcSymbol.type, annot, context)) {
 				throw new Error("Cannot reassign irrelevant type annotation. Existing:\n" + annot.toString() + "\nNew:\n" + funcSymbol.type.toString());
 			}
-			funcDeclAST.setSignarure(signature);
-			//TS to Nano - end
+			//funcDeclAST.setSignarure(signature);
+			var s = funcDecl.getSymbol()
+			if (s && s.type) {
+				funcDeclAST.setSignarure(s.type.getCallSignatures());
+			}
+			//NanoJS - end
 
 			return funcSymbol;
         }
@@ -8989,9 +8999,12 @@ module TypeScript {
             var resolver = new PullTypeResolver(compilationSettings, semanticInfoChain, scriptName);
             var context = new PullTypeResolutionContext(/*inTypeCheck*/ true);
 
+			//NanoJS
+			resolver._emitInterfaces = (scriptName.indexOf("lib.d.ts") == -1)
+
             resolver.resolveAST(script.moduleElements, false, scriptDecl, context);
 
-			//TS to Nano - begin
+			//NanoJS - begin
 			//TODO: Add flag here
 
 			var translator = new Translator(resolver);

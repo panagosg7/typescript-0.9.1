@@ -953,13 +953,13 @@ module TypeScript {
 
 
 		//NanoJS begin
-		private signature: PullSignatureSymbol = null;
+		private signature: PullSignatureSymbol[] = [];
 
-		public setSignarure(s: PullSignatureSymbol) {
+		public setSignarure(s: PullSignatureSymbol[]) {
 			this.signature = s;
 		}
 
-		public getSignature(): PullSignatureSymbol {
+		public getSignature(): PullSignatureSymbol[] {
 			return this.signature;
 		}
 		//NanoJS end
@@ -1139,6 +1139,7 @@ module TypeScript {
             return NodeType.InterfaceDeclaration;
         }
 
+		//XXXX: NanoJS: change should emit for user-defined interfaces. 
         public shouldEmit(): boolean {
             return false;
         }

@@ -1094,8 +1094,8 @@ module TypeScript {
             this.writeLineToOutput("");
             this.emitIndent();
             this.writeToOutput("/*@ ");
-            //TODO: handle no name 
-			this.writeToOutput(funcName + " :: " + funcDecl.getSignature().toNJSType().toString());
+			var tFunSig = new TFunctionSig(funcDecl.getSignature().map(p => p.toTFunctionSigMember()));
+			this.writeToOutput(funcName + " :: " + tFunSig.toString());
 			this.writeLineToOutput(" */");
             this.emitIndent();
 

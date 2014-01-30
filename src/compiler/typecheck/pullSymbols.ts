@@ -986,13 +986,11 @@ module TypeScript {
         }
 
 		//NanoJS begin
-		public toNJSType(): NJSType {
-
-			return new TFunction(
+		public toTFunctionSigMember(): TFunctionSigMember {
+			return new TFunctionSigMember(
 				this.getTypeParameters().map(p => p.type.toNJSTypeParameter()),
 				this.parameters.map(p => new BoundedNJSType(p.name, p.type ? p.type.toNJSType() : TAny)),
 				this.returnType.toNJSType());
-
 		}
 		//NanoJS end
 
@@ -2022,17 +2020,25 @@ module TypeScript {
 				return TNumber;
 			}
 
-			if (this.isClass() || this.isInterface()) {
+			if (this.isInterface()) {
 				var tArgs	= this.getTypeArguments();
+				console.log(this.name + ", Type Params: " + tArgs.map(t => t.toString()));
+				var tParams = this.getTypeParameters().map(p => p.toNJSTypeParameter());
+				var params = tArgs.map(p => p.toNJSType()); 
+				return new TTypeReference(this.fullName().split("<")[0], params);
+	
+			}
 
+			if (this.isClass()) {
+				console.log("toNJSType: " + this.toString());
+				throw new Error("UNIMPLEMENTED:toNJSType:class");
+				//var tArgs	= this.getTypeArguments();
 				//console.log(tArgs.map((t: PullTypeSymbol) => {
 				//	return t.toString();
 				//}).join(", "));
-
-				var tParams = this.getTypeParameters().map(p => p.toNJSTypeParameter());
-				var params = tArgs.map(p => p.toNJSType()); 
-
-				return new TTypeReference(this.fullName().split("<")[0], params);
+				//var tParams = this.getTypeParameters().map(p => p.toNJSTypeParameter());
+				//var params = tArgs.map(p => p.toNJSType()); 
+				//return new TTypeReference(this.fullName().split("<")[0], params);
 			}
 
 			if (this.isTypeParameter()) {
@@ -2047,8 +2053,7 @@ module TypeScript {
 					return !sig.isStringConstantOverloadSignature();
 				});
 
-				return (filteredSigs.length === 1) ? <NJSType> filteredSigs[0].toNJSType() : null;
-					//(<DRT.RtType>new DRT.RtOverloadedFunction(filteredSigs.map(sigToRtType)));
+				return new TFunctionSig(filteredSigs.map(s => s.toTFunctionSigMember()));
 			}
 
 			if (this.kind === PullElementKind.ObjectType) {
