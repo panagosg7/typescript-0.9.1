@@ -1400,7 +1400,7 @@ module TypeScript {
 
         private resolveInterfaceDeclaration(interfaceDeclAST: TypeDeclaration, context: PullTypeResolutionContext): PullTypeSymbol {
 
-            var interfaceDecl: PullDecl = this.getDeclForAST(interfaceDeclAST);
+			var interfaceDecl: PullDecl = this.getDeclForAST(interfaceDeclAST);
             var interfaceDeclSymbol = <PullTypeSymbol>interfaceDecl.getSymbol();
 
             this.resolveReferenceTypeDeclaration(interfaceDeclAST, context);
@@ -1410,6 +1410,15 @@ module TypeScript {
                     this.typeCheckMembersAgainstIndexer(interfaceDeclSymbol, interfaceDecl, context);
                 }
             }
+
+			//NanoJS
+			if (this._emitInterfaces) {
+				var nJSParams = interfaceDecl.getTypeParameters().map((p: PullDecl) => p.getSymbol().type.toNJSTypeParameter());
+				var fs = interfaceDecl.getSymbol().type.getMembers().map(m => new TField(m.name, m.type.toNJSType()));
+				var tRef = new TTypeReference(interfaceDeclAST.name.text(), nJSParams);
+				var tBody = new TObject(fs);
+				interfaceDeclAST.setTypeAnnotation(new TInterface(tRef, tBody));
+			}
 
             return interfaceDeclSymbol;
         }
@@ -3088,15 +3097,15 @@ module TypeScript {
 			this.typeCheckFunctionDeclaration(funcDeclAST, funcDecl, signature, context);
 
 			//NanoJS - begin
-			var annot = funcDeclAST.getTypeAnnotation();
-			if (annot && !this.sourceIsSubtypeOfTarget(annot, funcSymbol.type, context) && !this.sourceIsSubtypeOfTarget(funcSymbol.type, annot, context)) {
-				throw new Error("Cannot reassign irrelevant type annotation. Existing:\n" + annot.toString() + "\nNew:\n" + funcSymbol.type.toString());
-			}
-			//funcDeclAST.setSignarure(signature);
+			var sigAnnot = funcDeclAST.getSignature();
+			//Only allowing initial annoatation (this shouldn't really matter)
+			//if (!sigAnnot) {
 			var s = funcDecl.getSymbol()
 			if (s && s.type) {
 				funcDeclAST.setSignarure(s.type.getCallSignatures());
-			}
+			}	
+
+			//}
 			//NanoJS - end
 
 			return funcSymbol;
@@ -9003,17 +9012,6 @@ module TypeScript {
 			resolver._emitInterfaces = (scriptName.indexOf("lib.d.ts") == -1)
 
             resolver.resolveAST(script.moduleElements, false, scriptDecl, context);
-
-			//NanoJS - begin
-			//TODO: Add flag here
-
-			var translator = new Translator(resolver);
-
-			if (scriptName.indexOf(".d.ts") == -1) {
-				//translator.annotate(script.moduleElements);
-			}
-
-			//TS to Nano - end
 
             resolver.validateVariableDeclarationGroups(scriptDecl, context);
 

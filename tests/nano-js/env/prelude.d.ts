@@ -5,7 +5,7 @@
 
 interface list<A> {
 	data: A;
-	next: any; 	
+	next: list<A>;
 }
 
 declare function mylength<A>(xs: list<A>): number;

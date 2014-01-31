@@ -66,6 +66,18 @@ module TypeScript {
 
 	export var TBoolean = new TBooleanC();
 
+	export class TVoidC implements NJSType {
+
+		public toString(): string {
+			return "void";
+		}
+
+	}
+
+	export var TVoid = new TVoidC();
+
+
+
 	export class TField {
 		constructor(public symbol: string, public type: NJSType) {}
 	}
@@ -133,13 +145,29 @@ module TypeScript {
 
 	export class TTypeReference implements NJSType {
 
-		constructor(private name: string, private params: NJSType[]) { }
+		constructor(private name: string, private params: TTypeParam[]) { }
 
 		public toString(): string {
-			return this.name + " [ " + this.params.map(t => t.toString()).join(", ") + " ]"; 
+			var s = "";
+			s += this.name;
+			if (this.params && this.params.length > 0) {
+				s += "[ " + this.params.map(t => t.toString()).join(", ") + " ]";
+			}
+			return s; 
 		}
 
 	}
+
+	export class TInterface implements NJSType {
+
+		constructor(private ref: TTypeReference, private type: TObject) { }
+
+		public toString() {
+			return "type " + this.ref.toString() + " " + this.type.toString();
+		}		
+
+	}
+
 
 	export class TTypeParam {
 		constructor(public name: string) { }

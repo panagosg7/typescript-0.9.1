@@ -1953,6 +1953,21 @@ module TypeScript {
             this.popDecl(pullDecl);
         }
 
+		//NanoJS - begin
+		public emitInterface(interfaceDecl: InterfaceDeclaration) {
+			if (interfaceDecl.hasTypeAnnotation()) {
+				var ann = interfaceDecl.getTypeAnnotation();
+				this.emitIndent();
+				this.writeToOutput("/*@ ");
+				this.writeToOutput(ann.toString());
+				this.writeLineToOutput(" */");
+			}
+		}
+		//NanoJS - end
+
+
+
+
         private emitClassMembers(classDecl: ClassDeclaration): void {
             // First, emit all the functions.
             var lastEmittedMember: AST = null;

@@ -194,19 +194,7 @@ module TypeScript {
                 astArrayStructuralEquals(this.postComments(), ast.postComments(), includingPosition);
         }
 
-		//TS to Nano - begin
-		private type: PullTypeSymbol = null;
-
-		public setTypeAnnotation(s: PullTypeSymbol) {
-			this.type = s;
-		}
-
-		public getTypeAnnotation(): PullTypeSymbol {
-			return this.type;
-		}
-
-		//TS to Nano - end
-    }
+   }
 
     export class ASTList extends AST {
         constructor(public members: AST[], public separatorCount?: number) {
@@ -1098,6 +1086,23 @@ module TypeScript {
                    structuralEquals(this.extendsList, ast.extendsList, includingPosition) &&
                    structuralEquals(this.implementsList, ast.implementsList, includingPosition);
         }
+
+		//NanoJS begin
+		private _typeAnnotation: TInterface = null;
+
+		public setTypeAnnotation(t: TInterface) {
+			this._typeAnnotation = t;
+		}
+
+		public getTypeAnnotation(): TInterface {
+			return this._typeAnnotation;
+		}
+
+		public hasTypeAnnotation(): boolean {
+			return this._typeAnnotation !== null;
+		}
+		//NanoJS end
+
     }
 
     export class ClassDeclaration extends TypeDeclaration {
@@ -1139,10 +1144,16 @@ module TypeScript {
             return NodeType.InterfaceDeclaration;
         }
 
-		//XXXX: NanoJS: change should emit for user-defined interfaces. 
+		//NanoJS: change should emit for user-defined interfaces. 
         public shouldEmit(): boolean {
-            return false;
+			return this.hasTypeAnnotation();
+            //return false;
         }
+
+        public emit(emitter: Emitter): void {
+            emitter.emitInterface(this);
+        }
+    
     }
 
     export class ThrowStatement extends AST {

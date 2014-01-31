@@ -987,10 +987,10 @@ module TypeScript {
 
 		//NanoJS begin
 		public toTFunctionSigMember(): TFunctionSigMember {
-			return new TFunctionSigMember(
-				this.getTypeParameters().map(p => p.type.toNJSTypeParameter()),
-				this.parameters.map(p => new BoundedNJSType(p.name, p.type ? p.type.toNJSType() : TAny)),
-				this.returnType.toNJSType());
+			var tParams = this.getTypeParameters().map(p => p.type.toNJSTypeParameter());
+			var tArgs = this.parameters.map(p => new BoundedNJSType(p.name, p.type.toNJSType()));
+			var retT = this.returnType.toNJSType();
+			return new TFunctionSigMember(tParams, tArgs, retT);
 		}
 		//NanoJS end
 
@@ -2009,7 +2009,8 @@ module TypeScript {
 				if (this.toString() === "string") return TString;
 				if (this.toString() === "number") return TNumber;
 				if (this.toString() === "boolean") return TBoolean;
-				return new TError(this.toString());
+				if (this.toString() === "void") return TVoid;
+				return new TError("toNJSType:primitive: " + this.toString());
 			}
 
 			if (this.isArray()) {
@@ -2020,29 +2021,28 @@ module TypeScript {
 				return TNumber;
 			}
 
+			if (this.isTypeParameter()) {
+				return (<PullTypeParameterSymbol>this).toNJSTypeParameter();
+			}
+
 			if (this.isInterface()) {
-				var tArgs	= this.getTypeArguments();
-				console.log(this.name + ", Type Params: " + tArgs.map(t => t.toString()));
-				var tParams = this.getTypeParameters().map(p => p.toNJSTypeParameter());
-				var params = tArgs.map(p => p.toNJSType()); 
-				return new TTypeReference(this.fullName().split("<")[0], params);
-	
+				var tArgs: PullTypeSymbol[];
+				var typeArguments = this.getTypeArguments();
+				if (typeArguments) {
+					//If type arguments are not null, then use them (whether they are fixed or not
+					tArgs = typeArguments;
+				} else {
+					//If type arguments are null, then use type parameters (this should be equivalent,
+					//since they are definitely not fixed).
+					tArgs = this.getTypeParameters();
+				}
+
+				var nJSParams = tArgs.map(p => p.toNJSTypeParameter());
+				return new TTypeReference(this.fullName().split("<")[0], nJSParams);
 			}
 
 			if (this.isClass()) {
-				console.log("toNJSType: " + this.toString());
 				throw new Error("UNIMPLEMENTED:toNJSType:class");
-				//var tArgs	= this.getTypeArguments();
-				//console.log(tArgs.map((t: PullTypeSymbol) => {
-				//	return t.toString();
-				//}).join(", "));
-				//var tParams = this.getTypeParameters().map(p => p.toNJSTypeParameter());
-				//var params = tArgs.map(p => p.toNJSType()); 
-				//return new TTypeReference(this.fullName().split("<")[0], params);
-			}
-
-			if (this.isTypeParameter()) {
-				return (<PullTypeParameterSymbol>this).toNJSTypeParameter();
 			}
 
 			if (this.isFunction()) {
@@ -2093,8 +2093,7 @@ module TypeScript {
 			return TAny;
 		}
 
-
-		public toNJSTypeParameter() {
+		public toNJSTypeParameter(): TTypeParam {
 			return new TTypeParam(this.toString());
 		}
 
