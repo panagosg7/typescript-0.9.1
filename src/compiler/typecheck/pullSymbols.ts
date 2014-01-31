@@ -2057,39 +2057,13 @@ module TypeScript {
 			}
 
 			if (this.kind === PullElementKind.ObjectType) {
-				////Is this type already in the type hierarchy?
-				//if (this.isInDebugModeTypeHierarchy) {
-				//	//Then create a reference to there instead of dumping the whole type
-				//	var isGen = this.isGeneric();
-				//	var rtPars: DRT.RtType[] = [];
-				//	if (isGen) {
-				//		var tArgs = this.getTypeArguments();
-				//		if (tArgs) {
-				//			//Generic type with instantiated type parameters
-				//			rtPars = tArgs.map((p: PullTypeSymbol) => {
-				//				return p.toDebugModeRtType();
-				//			});
-				//		}
-				//		else {
-				//			//Generic type with un-instantiated type parameters
-				//			rtPars = this.getTypeParameters().map((p: PullTypeParameterSymbol) => {
-				//				return p.toDebugModeRtTypeParam();
-				//			});
-				//		}
-				//	}
-				//	return new DRT.RtTypeReference(this.pullSymbolID, this.name, isGen, rtPars);
-				//}
-				////Resort to object types
-				//var methods = this.getAllMembers(PullElementKind.Method, true);
-				//var properties = this.getAllMembers(PullElementKind.Property, true);
-				//var fields: { [fields: string]: DRT.RtType } = {};
-				//methods.concat(properties).forEach((s: PullSymbol) => { fields[s.name] = s.type.toDebugModeRtType(); })
-				//return new DRT.RtObject(fields);
+				var methods = this.getAllMembers(PullElementKind.Method, true);
+				var properties = this.getAllMembers(PullElementKind.Property, true);
+				var fields = methods.concat(properties).map(s => new TField(s.name, s.type.toNJSType()));	
+				return new TObject(fields);
 			}
 
-			//if (CompilationSettings.VERBOSE) {
-			//	console.log("Not supported in toDebugModeAST[" + PullElementKind[this.kind] + "]: " + this.toString().substring(0, 120));
-			//}
+			console.log("Not supported in toNJSType[" + PullElementKind[this.kind] + "]: " + this.toString().substring(0, 120));
 			return TAny;
 		}
 
