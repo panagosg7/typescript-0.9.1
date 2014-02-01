@@ -1,4 +1,4 @@
-/// <reference path="../env/prelude.d.ts" />
+/// <reference path="../../env/prelude.d.ts" />
 
 function loop(b: list<number>, min: number, i: number): number {
     if (i < mylength(b)) {
