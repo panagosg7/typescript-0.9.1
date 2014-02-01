@@ -609,7 +609,23 @@ module TypeScript {
             // JavaScript is always valid, add an extra parentheses for unparenthesized function expressions
             var shouldParenthesize = false;// hasFlag(funcDecl.getFunctionFlags(), FunctionFlags.IsFunctionExpression) && !funcDecl.isAccessor() && (hasFlag(funcDecl.getFlags(), ASTFlags.ExplicitSemicolon) || hasFlag(funcDecl.getFlags(), ASTFlags.AutomaticSemicolon));
 
-            if (includePreComments) {
+			//TS to Nano - begin
+			//Print NanoJS comment-style signature here
+			var pre = funcDecl.preComments();
+			if (pre && pre.every(c => (c.content.search(/\/\*@.*\*\//) == -1))) {
+				//If there are no type like annotations already, add them now!
+				this.writeLineToOutput("");
+				this.emitIndent();
+				this.writeToOutput("/*@ ");
+				var tFunSig = new TFunctionSig(funcDecl.getSignature().map(p => p.toTFunctionSigMember()));
+				this.writeToOutput(funcDecl.name.text() + " :: " + tFunSig.toString());
+				this.writeLineToOutput(" */");
+				this.emitIndent();
+			}
+
+		    //TS to Nano - end
+
+			if (includePreComments) {
                 this.emitComments(funcDecl, true);
             }
 
@@ -1088,19 +1104,6 @@ module TypeScript {
             }
 
             var funcName = funcDecl.getNameText();
-
-		    //TS to Nano - begin
-            //Print NanoJS comment-style signature he
-            this.writeLineToOutput("");
-            this.emitIndent();
-            this.writeToOutput("/*@ ");
-			var tFunSig = new TFunctionSig(funcDecl.getSignature().map(p => p.toTFunctionSigMember()));
-			this.writeToOutput(funcName + " :: " + tFunSig.toString());
-			this.writeLineToOutput(" */");
-            this.emitIndent();
-
-		    //TS to Nano - end
-
 
             if (((temp !== EmitContainer.Constructor) ||
                 ((funcDecl.getFunctionFlags() & FunctionFlags.Method) === FunctionFlags.None))) {
