@@ -1,17 +1,16 @@
-# TypeScript
+## TypeScript
 
 Scalable JavaScript development with types, classes and modules.
 
-## Install
+### Install
 
-  npm install -g typescript
+    npm install -g typescript
 
-## Usage
+### Usage
+    
+    tsc hello.ts
 
-  tsc hello.ts
-  
-
-## Build
+### Build
 
 1.  Install Node if you haven't already (http://nodejs.org/)
 2.  Install Jake, the tool we use to build our compiler (https://github.com/mde/jake). To do this, run "npm install -g jake".
@@ -27,6 +26,6 @@ Scalable JavaScript development with types, classes and modules.
     - jake -T lists the above commands. 
 
 
-## Oneline build command:
+### Oneline build command:
   
-  node bin/tsc.js -out built/local/tsc.js -removeComments -propagateEnumConstants -declaration -noImplicitAny --module commonjs src/compiler/tsc.ts
+    node bin/tsc.js -out built/local/tsc.js -removeComments -propagateEnumConstants -declaration -noImplicitAny --module commonjs src/compiler/tsc.ts
