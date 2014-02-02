@@ -1,3 +1,5 @@
+This is essentially a fork of https://typescript.codeplex.com/
+
 ## TypeScript
 
 Scalable JavaScript development with types, classes and modules.
