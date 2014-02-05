@@ -612,7 +612,7 @@ module TypeScript {
 			//TS to Nano - begin
 			//Print NanoJS comment-style signature here
 			var pre = funcDecl.preComments();
-			if (pre && pre.every(c => (c.content.search(/\/\*@.*\*\//) == -1))) {
+			if (!pre || pre.length == 0 || pre.every(c => (c.content.search(/\/\*@.*\*\//) == -1))) {
 				//If there are no type like annotations already, add them now!
 				this.writeLineToOutput("");
 				this.emitIndent();

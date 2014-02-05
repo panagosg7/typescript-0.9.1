@@ -12,6 +12,7 @@ function loop(b: list<number>, min: number, i: number): number {
     return min;
 }
 
+/*@ minIndex :: ( a: list[ { number | v > 0 } ] ) => number */
 function minIndex(a: list<number>): number {
     var r = loop(a, 0, 0);
     return r;
