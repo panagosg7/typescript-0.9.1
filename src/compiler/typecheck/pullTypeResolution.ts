@@ -9008,8 +9008,9 @@ module TypeScript {
             var resolver = new PullTypeResolver(compilationSettings, semanticInfoChain, scriptName);
             var context = new PullTypeResolutionContext(/*inTypeCheck*/ true);
 
-			//NanoJS
+			//NanoJS - begin
 			resolver._emitInterfaces = (scriptName.indexOf("lib.d.ts") == -1)
+			//NanoJS - end
 
             resolver.resolveAST(script.moduleElements, false, scriptDecl, context);
 

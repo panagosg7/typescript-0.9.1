@@ -48,6 +48,7 @@
 ///<reference path='typecheck\semanticDiagnostic.ts' />
 ///<reference path='typecheck\pullHelpers.ts' />
 ///<reference path='typecheck\translate.ts' />
+///<reference path='nanoAST.ts' />
 ///<reference path='syntaxTreeToAstVisitor.ts' />
 
 module TypeScript {
@@ -581,11 +582,18 @@ module TypeScript {
             return TypeScriptCompiler.mapToFileNameExtension(".js", fileName, wholeFileNameReplaced);
         }
 
+		//NanoJS
+        static mapToJSONFileName(fileName: string, wholeFileNameReplaced: boolean) {
+            return TypeScriptCompiler.mapToFileNameExtension(".json", fileName, wholeFileNameReplaced);
+        }
+
+
+
         // Caller is responsible for closing the returned emitter.
         // May throw exceptions.
         private emit(document: Document,
                      inputOutputMapper?: (inputName: string, outputName: string) => void ,
-                     emitter?: Emitter): Emitter {
+                     emitter?: Emitter, jsonEmitter?: Emitter): Emitter[] {
 
             var script = document.script;
             if (!script.isDeclareFile) {
@@ -593,8 +601,14 @@ module TypeScript {
                 if (!emitter) {
                     var javaScriptFileName = this.emitOptions.mapOutputFileName(document, TypeScriptCompiler.mapToJSFileName);
                     var outFile = this.createFile(javaScriptFileName, this.writeByteOrderMarkForDocument(document));
-
                     emitter = new Emitter(javaScriptFileName, outFile, this.emitOptions, this.semanticInfoChain);
+
+					//NanoJs
+                    var jsonFileName = this.emitOptions.mapOutputFileName(document, TypeScriptCompiler.mapToJSONFileName);
+                    var jsonOutFile = this.createFile(jsonFileName, this.writeByteOrderMarkForDocument(document));
+					console.log("jsonFileName: " + jsonFileName);
+					console.log("jsonOutFile: " + jsonOutFile);
+					jsonEmitter = new Emitter(jsonFileName, jsonOutFile, this.emitOptions, this.semanticInfoChain);
 
                     if (this.settings.mapSourceFiles) {
                         // We always create map files next to the jsFiles
@@ -616,9 +630,12 @@ module TypeScript {
                 // Set location info
                 emitter.setDocument(document);
                 emitter.emitJavascript(script, /*startLine:*/false);
+
+                jsonEmitter.setDocument(document);
+                jsonEmitter.emitJSON(script, /*startLine:*/false);
             }
 
-            return emitter;
+            return [emitter, jsonEmitter];
         }
 
         // Will not throw exceptions.
@@ -632,6 +649,7 @@ module TypeScript {
 
             var fileNames = this.fileNameToDocument.getAllKeys();
             var sharedEmitter: Emitter = null;
+			var sharedJSONEmitter: Emitter = null;
 
             // Iterate through the files, as long as we don't get an error.
             for (var i = 0, n = fileNames.length; i < n; i++) {
@@ -643,17 +661,27 @@ module TypeScript {
                     // Emitting module or multiple files, always goes to single file
                     if (this.emitOptions.outputMany || document.script.topLevelMod) {
                         // We're outputting to mulitple files.  We don't want to reuse an emitter in that case.
-                        var singleEmitter = this.emit(document, inputOutputMapper);
+                        var emitters = this.emit(document, inputOutputMapper);
+						var singleEmitter = emitters[0]; 
+						var singleJSONEmitter = emitters[1];
 
                         // Close the emitter after each emitted file.
                         if (singleEmitter) {
                             singleEmitter.emitSourceMapsAndClose();
                         }
+
+                        // Close the emitter after each emitted file.
+                        if (singleJSONEmitter) {
+                            singleJSONEmitter.emitSourceMapsAndClose();
+                        }
+ 
                     }
                     else {
                         // We're not outputting to multiple files.  Keep using the same emitter and don't
                         // close until below.
-                        sharedEmitter = this.emit(document, inputOutputMapper, sharedEmitter);
+                        var sharedEmitters = this.emit(document, inputOutputMapper, sharedEmitter, sharedJSONEmitter);
+						sharedEmitter = sharedEmitters[0];
+						sharedJSONEmitter = sharedEmitters[1];
                     }
                 }
                 catch (ex1) {
@@ -669,6 +697,17 @@ module TypeScript {
                     return Emitter.handleEmitterError(sharedEmitter.document.fileName, ex2);
                 }
             }
+			//NanoJS
+			if (sharedJSONEmitter) {
+                try {
+                    sharedJSONEmitter.emitSourceMapsAndClose();
+                }
+                catch (ex2) {
+                    return Emitter.handleEmitterError(sharedJSONEmitter.document.fileName, ex2);
+                }
+            }
+
+
 
             emitTime += new Date().getTime() - start;
             return [];
@@ -687,11 +726,17 @@ module TypeScript {
             if (this.emitOptions.outputMany || document.script.topLevelMod) {
                 // In outputMany mode, only emit the document specified and its sourceMap if needed
                 try {
-                    var emitter = this.emit(document, inputOutputMapper);
+                    var emitters = this.emit(document, inputOutputMapper);
+					var emitter = emitters[0];
+					var jsonEmitter = emitters[1];
 
                     // Close the emitter
                     if (emitter) {
                         emitter.emitSourceMapsAndClose();
+                    }
+                    // Close the JSON emitter
+                    if (jsonEmitter) {
+                        jsonEmitter.emitSourceMapsAndClose();
                     }
                 }
                 catch (ex1) {

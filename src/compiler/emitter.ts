@@ -1794,6 +1794,18 @@ module TypeScript {
             ast.emit(this);
         }
 
+		//NanoJS - begin
+        // tokenId is the id the preceding token
+        public emitJSON(ast: AST, startLine: boolean) {
+            if (ast === null) {
+                return;
+            }
+			console.log("Emitting JSON");
+			this.writeToOutput(JSON.stringify(ast.toNanoAST(), undefined, 2));
+        }
+		//NanoJS - end
+
+
         public emitPropertyAccessor(funcDecl: FunctionDeclaration, className: string, isProto: boolean) {
             if (!hasFlag(funcDecl.getFunctionFlags(), FunctionFlags.GetAccessor)) {
                 var accessorSymbol = PullHelpers.getAccessorSymbol(funcDecl, this.semanticInfoChain, this.document.fileName);

@@ -194,6 +194,12 @@ module TypeScript {
                 astArrayStructuralEquals(this.postComments(), ast.postComments(), includingPosition);
         }
 
+		//NanoJS - begin
+		public toNanoAST(): NanoAST {
+			throw new Error("toNanoAST not implemented for " + NodeType[this.nodeType()]);
+		}
+		//NanoJS - end
+
    }
 
     export class ASTList extends AST {
@@ -215,6 +221,13 @@ module TypeScript {
             return super.structuralEquals(ast, includingPosition) &&
                    astArrayStructuralEquals(this.members, ast.members, includingPosition);
         }
+
+		//NanoJS - begin
+		public toNanoAST(): NanoAST {
+			return new NanoASTList(this.members.map(m => m.toNanoAST()));
+		}
+		//NanoJS - end
+
     }
 
     export class Identifier extends AST {
@@ -608,6 +621,26 @@ module TypeScript {
                    structuralEquals(this.operand1, ast.operand1, includingPosition) &&
                    structuralEquals(this.operand2, ast.operand2, includingPosition);
         }
+
+
+		public toNanoAST(): NanoExpression {
+            switch (this.nodeType()) {
+                case NodeType.MemberAccessExpression:
+					throw new Error("UNIMMPLEMENTED:BinaryExpression:toNanoJSON:MemberAccessExpression");
+                case NodeType.ElementAccessExpression:
+					throw new Error("UNIMMPLEMENTED:BinaryExpression:toNanoJSON:ElementAccessExpression");
+
+                case NodeType.Member:
+					throw new Error("UNIMMPLEMENTED:BinaryExpression:toNanoJSON:Member");
+	            case NodeType.CommaExpression:
+					throw new Error("UNIMMPLEMENTED:BinaryExpression:toNanoJSON:CommaExpression");
+				default: {
+                    var binOp = BinaryExpression.getTextForBinaryToken(this.nodeType());
+					return new NanoInfixExpr(new NanoInfixOp(binOp), this.operand1.toNanoAST(), this.operand2.toNanoAST());
+				}
+            }
+		}
+
     }
 
     export class ConditionalExpression extends AST {
@@ -663,6 +696,13 @@ module TypeScript {
                    this.value === ast.value &&
                    this._text === ast._text;
         }
+
+		//NanoJS - begin
+		public toNanoAST(): NanoNumLit {
+			return new NanoNumLit(this.value);
+		}
+		//NanoJS - end
+
     }
 
     export class RegexLiteral extends AST {
@@ -973,6 +1013,13 @@ module TypeScript {
             return super.structuralEquals(ast, includingPosition) &&
                    structuralEquals(this.moduleElements, ast.moduleElements, includingPosition);
         }
+
+		//NanoJS - begin
+		public toNanoAST(): NanoAST {
+			return this.moduleElements.toNanoAST();
+		}
+		//NanoJS - end
+
     }
 
     export class ModuleDeclaration extends AST {
@@ -1215,6 +1262,13 @@ module TypeScript {
             return super.structuralEquals(ast, includingPosition) &&
                    structuralEquals(this.expression, ast.expression, includingPosition);
         }
+
+		//NanoJS - begin
+		public toNanoAST(): NanoExprStmt {
+			return new NanoExprStmt(this.expression.toNanoAST());
+		}
+		//NanoJS - end
+
     }
 
     export class LabeledStatement extends AST {
