@@ -1800,8 +1800,8 @@ module TypeScript {
             if (ast === null) {
                 return;
             }
-			console.log("Emitting JSON");
-			this.writeToOutput(JSON.stringify(ast.toNanoAST(), undefined, 2));
+			var json = JSON.stringify(ast.toNanoAST().toObject(), undefined, 2);
+			this.writeToOutput(json);
         }
 		//NanoJS - end
 

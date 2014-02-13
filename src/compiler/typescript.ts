@@ -606,8 +606,6 @@ module TypeScript {
 					//NanoJs
                     var jsonFileName = this.emitOptions.mapOutputFileName(document, TypeScriptCompiler.mapToJSONFileName);
                     var jsonOutFile = this.createFile(jsonFileName, this.writeByteOrderMarkForDocument(document));
-					console.log("jsonFileName: " + jsonFileName);
-					console.log("jsonOutFile: " + jsonOutFile);
 					jsonEmitter = new Emitter(jsonFileName, jsonOutFile, this.emitOptions, this.semanticInfoChain);
 
                     if (this.settings.mapSourceFiles) {

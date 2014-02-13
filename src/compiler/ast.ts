@@ -54,10 +54,15 @@ module TypeScript {
     }
 
     export interface IAST extends IASTSpan {
-        nodeType(): NodeType;
-        astID: number;
-        astIDString: string;
-        getLength(): number;
+		nodeType(): NodeType;
+		astID: number;
+		astIDString: string;
+		getLength(): number;
+
+		toNanoExp(): NanoExpression;
+		toNanoStmt(): NanoStatement;
+		toNanoLValue(): NanoLValue;
+
     }
 
     export class AST implements IAST {
@@ -198,6 +203,22 @@ module TypeScript {
 		public toNanoAST(): NanoAST {
 			throw new Error("toNanoAST not implemented for " + NodeType[this.nodeType()]);
 		}
+
+		public toNanoExp(): NanoExpression {
+			throw new Error("toNanoExp not implemented for " + NodeType[this.nodeType()]);
+		}
+
+		public toNanoStmt(): NanoStatement {
+			throw new Error("toNanoStmt not implemented for " + NodeType[this.nodeType()]);
+		}
+
+		public toNanoMemList(): NanoASTList {
+			throw new Error("toNanoMemList not implemented for " + NodeType[this.nodeType()]);
+		}
+
+		public toNanoLValue(): NanoLValue {
+			throw new Error("toNanoLValue not implemented for " + NodeType[this.nodeType()]);
+		}
 		//NanoJS - end
 
    }
@@ -223,8 +244,20 @@ module TypeScript {
         }
 
 		//NanoJS - begin
-		public toNanoAST(): NanoAST {
+		public toNanoAST(): NanoASTList {
 			return new NanoASTList(this.members.map(m => m.toNanoAST()));
+		}
+
+		public toNanoExp(): NanoASTList {
+			return new NanoASTList(this.members.map(m => m.toNanoExp()));
+		}
+
+		public toNanoStmt(): NanoASTList {
+			return new NanoASTList(this.members.map(m => m.toNanoStmt()));
+		}
+
+		public toNanoMemList(): NanoASTList {
+			return new NanoASTList(this.members.map(m => m.toNanoMemList()));
 		}
 		//NanoJS - end
 
@@ -269,6 +302,17 @@ module TypeScript {
                    this.actualText === ast.actualText &&
                    this.isMissing() === ast.isMissing();
         }
+
+
+		//NanoJS - begin
+		public toNanoAST(): NanoId {
+			return new NanoId(this.actualText);
+		}
+
+		public toNanoExp(): NanoExpression {
+			return new NanoVarRef(this.toNanoAST());
+		}
+		//NanoJS - end
     }
 
     export class MissingIdentifier extends Identifier {
@@ -367,88 +411,113 @@ module TypeScript {
             return super.structuralEquals(ast, includingPosition) &&
                    structuralEquals(this.expression, ast.expression, includingPosition);
         }
+
+		//NanoJS - begin
+		public toNanoAST(): NanoAST {
+			return this.expression.toNanoAST();
+		}
+
+		public toNanoExp(): NanoExpression {
+			return this.expression.toNanoExp();
+		}
+		//NanoJS - end
+
     }
 
-    export class UnaryExpression extends AST {
-        constructor(private _nodeType: NodeType, public operand: AST, public castTerm: TypeReference) {
-            super();
-        }
+	export class UnaryExpression extends AST {
+		constructor(private _nodeType: NodeType, public operand: AST, public castTerm: TypeReference) {
+			super();
+		}
 
-        public nodeType(): NodeType {
-            return this._nodeType;
-        }
+		public nodeType(): NodeType {
+			return this._nodeType;
+		}
 
-        public emitWorker(emitter: Emitter) {
-            switch (this.nodeType()) {
-                case NodeType.PostIncrementExpression:
-                    this.operand.emit(emitter);
-                    emitter.writeToOutput("++");
-                    break;
-                case NodeType.LogicalNotExpression:
-                    emitter.writeToOutput("!");
-                    this.operand.emit(emitter);
-                    break;
-                case NodeType.PostDecrementExpression:
-                    this.operand.emit(emitter);
-                    emitter.writeToOutput("--");
-                    break;
-                case NodeType.ObjectLiteralExpression:
-                    emitter.emitObjectLiteral(this);
-                    break;
-                case NodeType.ArrayLiteralExpression:
-                    emitter.emitArrayLiteral(this);
-                    break;
-                case NodeType.BitwiseNotExpression:
-                    emitter.writeToOutput("~");
-                    this.operand.emit(emitter);
-                    break;
-                case NodeType.NegateExpression:
-                    emitter.writeToOutput("-");
-                    if (this.operand.nodeType() === NodeType.NegateExpression || this.operand.nodeType() === NodeType.PreDecrementExpression) {
-                        emitter.writeToOutput(" ");
-                    }
-                    this.operand.emit(emitter);
-                    break;
-                case NodeType.PlusExpression:
-                    emitter.writeToOutput("+");
-                    if (this.operand.nodeType() === NodeType.PlusExpression || this.operand.nodeType() === NodeType.PreIncrementExpression) {
-                        emitter.writeToOutput(" ");
-                    }
-                    this.operand.emit(emitter);
-                    break;
-                case NodeType.PreIncrementExpression:
-                    emitter.writeToOutput("++");
-                    this.operand.emit(emitter);
-                    break;
-                case NodeType.PreDecrementExpression:
-                    emitter.writeToOutput("--");
-                    this.operand.emit(emitter);
-                    break;
-                case NodeType.TypeOfExpression:
-                    emitter.writeToOutput("typeof ");
-                    this.operand.emit(emitter);
-                    break;
-                case NodeType.DeleteExpression:
-                    emitter.writeToOutput("delete ");
-                    this.operand.emit(emitter);
-                    break;
-                case NodeType.VoidExpression:
-                    emitter.writeToOutput("void ");
-                    this.operand.emit(emitter);
-                    break;
-                case NodeType.CastExpression:
-                    this.operand.emit(emitter);
-                    break;
-                default:
-                    throw Errors.abstract();
-            }
-        }
+		public emitWorker(emitter: Emitter) {
+			switch (this.nodeType()) {
+				case NodeType.PostIncrementExpression:
+					this.operand.emit(emitter);
+					emitter.writeToOutput("++");
+					break;
+				case NodeType.LogicalNotExpression:
+					emitter.writeToOutput("!");
+					this.operand.emit(emitter);
+					break;
+				case NodeType.PostDecrementExpression:
+					this.operand.emit(emitter);
+					emitter.writeToOutput("--");
+					break;
+				case NodeType.ObjectLiteralExpression:
+					emitter.emitObjectLiteral(this);
+					break;
+				case NodeType.ArrayLiteralExpression:
+					emitter.emitArrayLiteral(this);
+					break;
+				case NodeType.BitwiseNotExpression:
+					emitter.writeToOutput("~");
+					this.operand.emit(emitter);
+					break;
+				case NodeType.NegateExpression:
+					emitter.writeToOutput("-");
+					if (this.operand.nodeType() === NodeType.NegateExpression || this.operand.nodeType() === NodeType.PreDecrementExpression) {
+						emitter.writeToOutput(" ");
+					}
+					this.operand.emit(emitter);
+					break;
+				case NodeType.PlusExpression:
+					emitter.writeToOutput("+");
+					if (this.operand.nodeType() === NodeType.PlusExpression || this.operand.nodeType() === NodeType.PreIncrementExpression) {
+						emitter.writeToOutput(" ");
+					}
+					this.operand.emit(emitter);
+					break;
+				case NodeType.PreIncrementExpression:
+					emitter.writeToOutput("++");
+					this.operand.emit(emitter);
+					break;
+				case NodeType.PreDecrementExpression:
+					emitter.writeToOutput("--");
+					this.operand.emit(emitter);
+					break;
+				case NodeType.TypeOfExpression:
+					emitter.writeToOutput("typeof ");
+					this.operand.emit(emitter);
+					break;
+				case NodeType.DeleteExpression:
+					emitter.writeToOutput("delete ");
+					this.operand.emit(emitter);
+					break;
+				case NodeType.VoidExpression:
+					emitter.writeToOutput("void ");
+					this.operand.emit(emitter);
+					break;
+				case NodeType.CastExpression:
+					this.operand.emit(emitter);
+					break;
+				default:
+					throw Errors.abstract();
+			}
+		}
 
-        public structuralEquals(ast: UnaryExpression, includingPosition: boolean): boolean {
-            return super.structuralEquals(ast, includingPosition) &&
-                   structuralEquals(this.castTerm, ast.castTerm, includingPosition) &&
-                   structuralEquals(this.operand, ast.operand, includingPosition);
-        }
+		public structuralEquals(ast: UnaryExpression, includingPosition: boolean): boolean {
+			return super.structuralEquals(ast, includingPosition) &&
+				structuralEquals(this.castTerm, ast.castTerm, includingPosition) &&
+				structuralEquals(this.operand, ast.operand, includingPosition);
+		}
+
+		//NanoJS - begin
+
+		public toNanoExp() {
+			switch (this.nodeType()) {
+				case NodeType.ObjectLiteralExpression:
+					return new NanoObjectLit(this.operand.toNanoMemList());
+			}
+		}
+	
+		//NanoJS - begin
+
+
+
     }
 
     export interface ICallExpression extends IAST {
@@ -507,6 +576,13 @@ module TypeScript {
                    structuralEquals(this.typeArguments, ast.typeArguments, includingPosition) &&
                    structuralEquals(this.arguments, ast.arguments, includingPosition);
         }
+
+		//NanoJS - begin
+		public toNanoExp(): NanoExpression {
+			return new NanoCallExpr(this.target.toNanoExp(), this.arguments.toNanoExp());	
+		}
+		//NanoJS - end
+
     }
 
     export class BinaryExpression extends AST {
@@ -519,7 +595,6 @@ module TypeScript {
         public nodeType(): NodeType {
             return this._nodeType;
         }
-
         public static getTextForBinaryToken(nodeType: NodeType): string {
             switch (nodeType) {
                 case NodeType.CommaExpression: return ",";
@@ -623,23 +698,100 @@ module TypeScript {
         }
 
 
+		//NanoJS - begin
 		public toNanoAST(): NanoExpression {
             switch (this.nodeType()) {
-                case NodeType.MemberAccessExpression:
-					throw new Error("UNIMMPLEMENTED:BinaryExpression:toNanoJSON:MemberAccessExpression");
-                case NodeType.ElementAccessExpression:
-					throw new Error("UNIMMPLEMENTED:BinaryExpression:toNanoJSON:ElementAccessExpression");
-
-                case NodeType.Member:
-					throw new Error("UNIMMPLEMENTED:BinaryExpression:toNanoJSON:Member");
-	            case NodeType.CommaExpression:
-					throw new Error("UNIMMPLEMENTED:BinaryExpression:toNanoJSON:CommaExpression");
+				case NodeType.MemberAccessExpression: {
+					switch (this.operand2.nodeType()) {
+						case NodeType.Name:
+							return new NanoLDot(this.operand1.toNanoExp(), (<Identifier>this.operand2).actualText);
+					}
+					throw new Error("UNIMMPLEMENTED:BinaryExpression:toNanoAST:MemberAccessExpression:op2-nonId");
+				}
 				default: {
-                    var binOp = BinaryExpression.getTextForBinaryToken(this.nodeType());
-					return new NanoInfixExpr(new NanoInfixOp(binOp), this.operand1.toNanoAST(), this.operand2.toNanoAST());
+					throw new Error("UNIMMPLEMENTED:BinaryExpression:toNanoAST:Expression");
+                    //var binOp = BinaryExpression.getTextForBinaryToken(this.nodeType());
+					//return new NanoInfixExpr(new NanoInfixOp(binOp), this.operand1.toNanoExp(), this.operand2.toNanoExp());
 				}
             }
 		}
+
+		public toNanoLValue(): NanoLValue {
+            switch (this.nodeType()) {
+				case NodeType.MemberAccessExpression: {
+					switch (this.operand2.nodeType()) {
+						case NodeType.Name:
+							return new NanoLDot(this.operand1.toNanoExp(), (<Identifier>this.operand2).actualText);
+					}
+				}
+				default: {
+					throw new Error("UNIMMPLEMENTED:BinaryExpression:toNanoLValue");
+				}
+            }
+		}
+
+
+
+		public toNanoExp(): NanoExpression {
+            switch (this.nodeType()) {
+				case NodeType.MemberAccessExpression: {
+					switch (this.operand2.nodeType()) {
+						case NodeType.Name:
+							return new NanoDotRef(
+								this.operand1.toNanoExp(),
+								(<Identifier>this.operand2).toNanoAST())
+								;
+					}
+					throw new Error("UNIMMPLEMENTED:BinaryExpression:toNanoAST:MemberAccessExpression:op2-nonId");
+				}
+				case NodeType.AssignmentExpression: {
+					return new NanoAssignExpr(
+						new NanoAssignOp(BinaryExpression.getTextForBinaryToken(this.nodeType())),
+						this.operand1.toNanoLValue(),
+						this.operand2.toNanoExp());
+				}
+				case NodeType.AddExpression:
+				case NodeType.SubtractExpression:
+				case NodeType.MultiplyExpression:
+				case NodeType.DivideExpression:
+				{
+					return new NanoInfixExpr(
+						new NanoInfixOp(BinaryExpression.getTextForBinaryToken(this.nodeType())),
+						this.operand1.toNanoExp(),
+						this.operand2.toNanoExp());
+				}
+				default: 
+					throw new Error("UNIMMPLEMENTED:BinaryExpression:toNanoExp:Expression");
+            }
+		}
+
+
+		public toNanoMemList(): NanoASTList {
+            switch (this.nodeType()) {
+                case NodeType.Member: {
+					switch (this.operand1.nodeType()) {
+						case NodeType.Name:
+							return new NanoASTList([
+								new NanoPropId((<Identifier>this.operand1).toNanoAST()),
+								this.operand2.toNanoExp()
+							]);
+						case NodeType.NumericLiteral:
+							return new NanoASTList([
+								new NanoPropNum((<NumberLiteral>this.operand1).value),
+								this.operand2.toNanoExp()
+							]);
+						case NodeType.StringLiteral:
+							return new NanoASTList([
+								new NanoPropString((<StringLiteral>this.operand1).actualText),
+								this.operand2.toNanoExp()
+							]);
+					}
+				}
+				default:
+					throw new Error("UNIMMPLEMENTED:BinaryExpression:toNanoMemList:default");
+            }
+		}
+		//NanoJS - begin
 
     }
 
@@ -698,7 +850,7 @@ module TypeScript {
         }
 
 		//NanoJS - begin
-		public toNanoAST(): NanoNumLit {
+		public toNanoExp(): NanoNumLit {
 			return new NanoNumLit(this.value);
 		}
 		//NanoJS - end
@@ -748,6 +900,15 @@ module TypeScript {
             return super.structuralEquals(ast, includingPosition) &&
                    this.actualText === ast.actualText;
         }
+
+		//NanoJS - begin
+		public toNanoExp(): NanoStringLit {
+			return new NanoStringLit(this.actualText);
+		}
+		//NanoJS - end
+
+
+
     }
 
     export class ImportDeclaration extends AST {
@@ -879,6 +1040,19 @@ module TypeScript {
         public emit(emitter: Emitter) {
             emitter.emitVariableDeclarator(this);
         }
+
+		//NanoJS - begin
+		public toNanoAST(): NanoVarDecl {
+			// data VarDecl a = VarDecl a (Id a) (Maybe (Expression a))
+			if (this.init !== null) {
+				return new NanoVarDecl(this.id.toNanoAST(), this.init.toNanoExp());
+			}
+			else {
+				return new NanoVarDecl(this.id.toNanoAST());
+			}
+		}
+
+		//NanoJS - end
     }
 
     export class Parameter extends BoundDecl {
@@ -900,6 +1074,14 @@ module TypeScript {
             return super.structuralEquals(ast, includingPosition) &&
                    this.isOptional === ast.isOptional;
         }
+
+		//NanoJS - begin
+		//TODO: omitting type here!!!
+		public toNanoAST(): NanoAST {
+			return this.id.toNanoAST();
+		}		
+		//NanoJS - end
+
     }
 
     export class FunctionDeclaration extends AST {
@@ -990,6 +1172,23 @@ module TypeScript {
 		public getSignature(): PullSignatureSymbol[] {
 			return this.signature;
 		}
+
+		//TypeScript bunches up function expressions and statements. So we'll need 
+		//to give implementations for both and have the caller decide which one to use.
+		public toNanoExp(): NanoExpression {			
+			return new NanoFuncExpr(
+				(this.name) ? this.name.toNanoAST() : null,
+				this.arguments.toNanoAST(),
+				new NanoASTList([this.block.toNanoStmt()]));
+		}
+
+		public toNanoStmt(): NanoStatement {
+			return new NanoFuncStmt(
+				this.name.toNanoAST(),
+				this.arguments.toNanoAST(),
+				new NanoASTList([this.block.toNanoStmt()]));
+		}
+
 		//NanoJS end
     }
 
@@ -1016,7 +1215,8 @@ module TypeScript {
 
 		//NanoJS - begin
 		public toNanoAST(): NanoAST {
-			return this.moduleElements.toNanoAST();
+		//Top-level will be statements
+			return this.moduleElements.toNanoStmt();
 		}
 		//NanoJS - end
 
@@ -1264,8 +1464,8 @@ module TypeScript {
         }
 
 		//NanoJS - begin
-		public toNanoAST(): NanoExprStmt {
-			return new NanoExprStmt(this.expression.toNanoAST());
+		public toNanoStmt(): NanoExprStmt {
+			return new NanoExprStmt(this.expression.toNanoExp());
 		}
 		//NanoJS - end
 
@@ -1316,6 +1516,18 @@ module TypeScript {
             return super.structuralEquals(ast, includingPosition) &&
                    structuralEquals(this.declarators, ast.declarators, includingPosition);
         }
+
+		//NanoJS - begin
+		//Equivalent to VarDeclStmt in language-ecmascript
+		public toNanoAST(): NanoVarDeclStmt {
+			return new NanoVarDeclStmt(this.declarators.toNanoAST());
+		}
+		
+		public toNanoStmt(): NanoVarDeclStmt {
+			return new NanoVarDeclStmt(this.declarators.toNanoAST());
+		}
+
+		//NanoJS - end
     }
 
     export class VariableStatement extends AST {
@@ -1350,6 +1562,18 @@ module TypeScript {
             return super.structuralEquals(ast, includingPosition) &&
                    structuralEquals(this.declaration, ast.declaration, includingPosition);
         }
+
+		//NanoJS - begin
+		public toNanoAST(): NanoAST {
+			return this.declaration.toNanoAST();	
+		}
+
+		public toNanoStmt(): NanoStatement {
+			return this.declaration.toNanoStmt();	
+		}
+		//NanoJS - end
+
+
     }
 
     export class Block extends AST {
@@ -1383,6 +1607,12 @@ module TypeScript {
             return super.structuralEquals(ast, includingPosition) &&
                    structuralEquals(this.statements, ast.statements, includingPosition);
         }
+
+
+		public toNanoStmt(): NanoStatement {
+			return new NanoBlockStmt(this.statements.toNanoStmt());
+		}
+
     }
 
     export class Jump extends AST {
@@ -1555,6 +1785,16 @@ module TypeScript {
             return super.structuralEquals(ast, includingPosition) &&
                    structuralEquals(this.returnExpression, ast.returnExpression, includingPosition);
         }
+
+		//NanoJS
+		public toNanoStmt(): NanoStatement {
+			var ret = this.returnExpression.toNanoExp();
+
+			console.log(NodeType[this.returnExpression.nodeType()]);
+			return new NanoReturnStmt(ret);
+		}
+
+
     }
 
     export class ForInStatement extends AST {
@@ -1924,6 +2164,13 @@ module TypeScript {
         public structuralEquals(ast: CatchClause, includingPosition: boolean): boolean {
             return super.structuralEquals(ast, includingPosition);
         }
+
+		//NanoJS - begin
+		public toNanoStmt() {
+			return new NanoEmptyStmt();
+		}
+		//NanoJS - end
+
     }
 
     export class Comment extends AST {
