@@ -724,6 +724,8 @@ module TypeScript {
 							return new NanoLDot(this.operand1.toNanoExp(), (<Identifier>this.operand2).actualText);
 					}
 				}
+				case NodeType.ElementAccessExpression: 
+					return new NanoLBracket(this.operand1.toNanoExp(), this.operand2.toNanoExp());
 				default: {
 					throw new Error("UNIMMPLEMENTED:BinaryExpression:toNanoLValue");
 				}
@@ -739,17 +741,17 @@ module TypeScript {
 						case NodeType.Name:
 							return new NanoDotRef(
 								this.operand1.toNanoExp(),
-								(<Identifier>this.operand2).toNanoAST())
-								;
+								(<Identifier>this.operand2).toNanoAST());
 					}
 					throw new Error("UNIMMPLEMENTED:BinaryExpression:toNanoAST:MemberAccessExpression:op2-nonId");
 				}
-				case NodeType.AssignmentExpression: {
+				case NodeType.AssignmentExpression: 
 					return new NanoAssignExpr(
 						new NanoAssignOp(BinaryExpression.getTextForBinaryToken(this.nodeType())),
 						this.operand1.toNanoLValue(),
 						this.operand2.toNanoExp());
-				}
+				case NodeType.ElementAccessExpression: 
+					return new NanoBracketRef(this.operand1.toNanoExp(), this.operand2.toNanoExp());
 				case NodeType.AddExpression:
 				case NodeType.SubtractExpression:
 				case NodeType.MultiplyExpression:

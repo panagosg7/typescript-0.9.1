@@ -216,7 +216,6 @@ module TypeScript {
 		public toObject() {
 			var obj = {};
 			obj[NanoAssignOpKind[this.signToOpKind()]] = [];
-			console.log(obj);
 			return obj;
 		}
 
@@ -232,7 +231,6 @@ module TypeScript {
 	 *				LValue
 	 * 
 	 *****************************************************************************/
-
 
 	export class NanoLValue extends NanoAST {
 
@@ -344,7 +342,8 @@ module TypeScript {
 			return {
 				StringLit: [
 					dummySourceSpan,
-					this.str
+					//TODO: strings appear with '\"' in beginning and end
+					this.str.toString()
 				]
 			};
 		}
@@ -407,6 +406,24 @@ module TypeScript {
 			super();
 		}
 	}
+
+	export class NanoBracketRef extends NanoExpression {
+
+		public toObject() {
+			return {
+				BracketRef: [
+					dummySourceSpan,
+					this.e1.toObject(),
+					this.e2.toObject()
+				]
+			};
+		}
+		
+		constructor(public e1: NanoExpression, public e2: NanoExpression) {
+			super();
+		}
+	}
+
 
 
 
