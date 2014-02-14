@@ -1,5 +1,7 @@
 This is essentially a fork of https://typescript.codeplex.com/
 
+The Fidelity test folder has been removed from the entire history to cut down on size.
+
 ## TypeScript
 
 Scalable JavaScript development with types, classes and modules.
