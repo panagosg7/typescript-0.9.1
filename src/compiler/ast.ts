@@ -63,6 +63,7 @@ module TypeScript {
 		toNanoStmt(): NanoStatement;
 		toNanoLValue(): NanoLValue;
 		toNanoClassElt(): NanoClassElt;
+		toNanoForInit(): NanoForInit;
 
     }
 
@@ -224,6 +225,10 @@ module TypeScript {
 		public toNanoClassElt(): NanoClassElt {
 			throw new Error("toNanoClassElt not implemented for " + NodeType[this.nodeType()]);
 		}
+
+		public toNanoForInit(): NanoForInit {
+			throw new Error("toNanoForInit not implemented for " + NodeType[this.nodeType()]);
+		}
 		//NanoJS - end
 
    }
@@ -314,6 +319,10 @@ module TypeScript {
 
 
 		//NanoJS - begin
+		public toNanoLValue(): NanoLValue {
+			return new NanoLVar(this.actualText);
+		}
+
 		public toNanoAST(): NanoId {
 			return new NanoId(this.actualText);
 		}
@@ -539,13 +548,26 @@ module TypeScript {
 
 		//NanoJS - begin
 
-		public toNanoExp() {
+		public toNanoExp(): NanoExpression {
 			switch (this.nodeType()) {
 				case NodeType.ObjectLiteralExpression:
 					return new NanoObjectLit(this.operand.toNanoMemList());
+				case NodeType.PostIncrementExpression:
+					return new NanoUnaryAssignExpr(new NanoUnaryAssignOp(NanoUnaryAssignOpKind.PostfixInc), this.operand.toNanoLValue());
+				case NodeType.PreIncrementExpression:
+					return new NanoUnaryAssignExpr(new NanoUnaryAssignOp(NanoUnaryAssignOpKind.PrefixInc), this.operand.toNanoLValue());
+				case NodeType.PostDecrementExpression:
+					return new NanoUnaryAssignExpr(new NanoUnaryAssignOp(NanoUnaryAssignOpKind.PostfixDec), this.operand.toNanoLValue());
+				case NodeType.PreDecrementExpression:
+					return new NanoUnaryAssignExpr(new NanoUnaryAssignOp(NanoUnaryAssignOpKind.PrefixDec), this.operand.toNanoLValue());
+
+				case NodeType.NegateExpression:
+					return new NanoPrefixExpr(new NanoPrefixOp(NanoPrefixOpKind.PrefixMinus), this.operand.toNanoExp());
+					
+				default:
+					throw new Error("UnaryExpression:toNanoExp nodetype not supported: " + NodeType[this.nodeType()]);
 			}
 		}
-	
 		//NanoJS - begin
 
 
@@ -787,13 +809,16 @@ module TypeScript {
 					}
 					throw new Error("UNIMMPLEMENTED:BinaryExpression:toNanoAST:MemberAccessExpression:op2-nonId");
 				}
+
 				case NodeType.AssignmentExpression: 
 					return new NanoAssignExpr(
 						new NanoAssignOp(BinaryExpression.getTextForBinaryToken(this.nodeType())),
 						this.operand1.toNanoLValue(),
 						this.operand2.toNanoExp());
+
 				case NodeType.ElementAccessExpression: 
 					return new NanoBracketRef(this.operand1.toNanoExp(), this.operand2.toNanoExp());
+
 				case NodeType.AddExpression:
 				case NodeType.SubtractExpression:
 				case NodeType.MultiplyExpression:
@@ -804,12 +829,22 @@ module TypeScript {
 				case NodeType.GreaterThanOrEqualExpression:
 				case NodeType.LessThanExpression:
 				case NodeType.LessThanOrEqualExpression:
-				{
+				case NodeType.LogicalOrExpression:
+				case NodeType.LogicalAndExpression:
 					return new NanoInfixExpr(
 						new NanoInfixOp(BinaryExpression.getTextForBinaryToken(this.nodeType())),
 						this.operand1.toNanoExp(),
 						this.operand2.toNanoExp());
-				}
+
+				case NodeType.AddAssignmentExpression:
+				case NodeType.SubtractAssignmentExpression:
+				case NodeType.DivideAssignmentExpression:
+				case NodeType.MultiplyAssignmentExpression:
+					return new NanoAssignExpr(
+						new NanoAssignOp(BinaryExpression.getTextForBinaryToken(this.nodeType())),
+						this.operand1.toNanoLValue(),
+						this.operand2.toNanoExp());
+
 				default: 
 					throw new Error("UNIMMPLEMENTED:BinaryExpression:toNanoExp:Expression for : " + NodeType[this.nodeType()]);
             }
@@ -900,8 +935,14 @@ module TypeScript {
         }
 
 		//NanoJS - begin
-		public toNanoExp(): NanoNumLit {
-			return new NanoNumLit(this.value);
+		public toNanoExp(): NanoExpression {
+			if (this.text().indexOf(".") === -1) {
+			//No decimal part
+				return new NanoIntLit(this.value);
+			}
+			else {
+				return new NanoNumLit(this.value);
+			}
 		}
 		//NanoJS - end
 
@@ -1624,6 +1665,10 @@ module TypeScript {
 
 		//NanoJS - begin
 		//Equivalent to VarDeclStmt in language-ecmascript
+		public toNanoForInit(): NanoForInit {
+			return new NanoVarInit(<NanoASTList<NanoVarDecl>>this.declarators.toNanoAST());
+		}
+
 		public toNanoAST(): NanoVarDeclStmt {
 			return new NanoVarDeclStmt(<NanoASTList<NanoVarDecl>>this.declarators.toNanoAST());
 		}
@@ -1779,6 +1824,11 @@ module TypeScript {
                    structuralEquals(this.cond, ast.cond, includingPosition) &&
                    structuralEquals(this.body, ast.body, includingPosition);
         }
+
+		//NanoJS - begin
+		public toNanoStmt(): NanoStatement {
+			return new NanoWhileStmt(this.cond.toNanoExp(), this.body.toNanoStmt());
+		}
     }
 
     export class DoStatement extends AST {
@@ -1854,12 +1904,23 @@ module TypeScript {
             }
         }
 
-        public structuralEquals(ast: IfStatement, includingPosition: boolean): boolean {
-            return super.structuralEquals(ast, includingPosition) &&
-                   structuralEquals(this.cond, ast.cond, includingPosition) &&
-                   structuralEquals(this.thenBod, ast.thenBod, includingPosition) &&
-                   structuralEquals(this.elseBod, ast.elseBod, includingPosition);
-        }
+		public structuralEquals(ast: IfStatement, includingPosition: boolean): boolean {
+			return super.structuralEquals(ast, includingPosition) &&
+				structuralEquals(this.cond, ast.cond, includingPosition) &&
+				structuralEquals(this.thenBod, ast.thenBod, includingPosition) &&
+				structuralEquals(this.elseBod, ast.elseBod, includingPosition);
+		} 
+		//NanoJS - begin
+		public toNanoStmt(): NanoStatement {
+			if (this.elseBod) {
+				return new NanoIfStmt(this.cond.toNanoExp(), this.thenBod.toNanoStmt(), this.elseBod.toNanoStmt());
+			}
+			else {
+				return new NanoIfSingleStmt(this.cond.toNanoExp(), this.thenBod.toNanoStmt());
+			}
+		}
+		//NanoJS - end
+
     }
 
     export class ReturnStatement extends AST {
@@ -1978,6 +2039,16 @@ module TypeScript {
                    structuralEquals(this.incr, ast.incr, includingPosition) &&
                    structuralEquals(this.body, ast.body, includingPosition);
         }
+
+		//NanoJS - begin
+		public toNanoStmt(): NanoStatement {
+			return new NanoForStmt(this.init.toNanoForInit(),
+				this.cond.toNanoExp(),
+				this.incr.toNanoExp(),
+				this.body.toNanoStmt());
+		}
+
+		//NanoJS - end
     }
 
     export class WithStatement extends AST {

@@ -118,7 +118,51 @@ module TypeScript {
 		}
 	}
 
+	/*****************************************************************************
+	 *
+	 *				ForInit
+	 * 
+	 *****************************************************************************/
 
+
+	export class NanoForInit extends NanoAST { }
+
+	export class NanoNoInit extends NanoForInit {
+
+		public toObject(): any {
+			return { NoInit: dummySourceSpan };
+		}
+
+	}
+
+	export class NanoVarInit extends NanoForInit {
+
+		public toObject(): any {
+			return { VarInit: this.vds.toObject() };
+		}
+
+		constructor(public vds: NanoASTList<NanoVarDecl>) {
+			super();
+		}
+
+	}
+
+	export class NanoExprInit extends NanoForInit {
+
+		public toObject(): any {
+			return {
+				ExprInit: [
+					dummySourceSpan,
+					this.exp.toObject()
+				]
+			};
+		}
+
+		constructor(public exp: NanoExpression) {
+			super();
+		}
+
+	}
 
 
 
@@ -200,7 +244,8 @@ module TypeScript {
 
 
 	export enum NanoAssignOpKind {
-		OpAssign
+		OpAssign,
+		OpAssignAdd
 	}
 
 	export class NanoAssignOp extends NanoAST {
@@ -209,6 +254,7 @@ module TypeScript {
 		private signToOpKind(): NanoAssignOpKind {
 			switch (this.sign) {
 				case "=": return NanoAssignOpKind.OpAssign;
+				case "+=": return NanoAssignOpKind.OpAssignAdd;
 			}
 			throw new Error("Case: " + this.sign + " not handled in NanoAssignOp.signToOpKind");
 		}
@@ -224,6 +270,51 @@ module TypeScript {
 			this._opKind = this.signToOpKind();
 		}
 	}
+
+	export enum NanoUnaryAssignOpKind {
+		PrefixInc,
+		PrefixDec,
+		PostfixInc,
+		PostfixDec
+	}
+
+	export class NanoUnaryAssignOp extends NanoAST {
+
+		public toObject() {
+			var op = {};
+			op[NanoUnaryAssignOpKind[this.opKind]] = [];
+			return op;
+		}
+
+		constructor(public opKind: NanoUnaryAssignOpKind) {
+			super();
+		}
+	}
+
+	export enum NanoPrefixOpKind {
+		PrefixLNot,
+		PrefixBNot,
+		PrefixPlus,
+		PrefixMinus,
+		PrefixTypeof,
+		PrefixVoid,
+		PrefixDelete
+	}
+	
+	export class NanoPrefixOp extends NanoAST {
+
+		public toObject() {
+			var op = {};
+			op[NanoPrefixOpKind[this.opKind]] = [];
+			return op;
+		}
+
+		constructor(public opKind: NanoPrefixOpKind) {
+			super();
+		}
+	}
+
+
 
 
 	/*****************************************************************************
@@ -335,6 +426,25 @@ module TypeScript {
 		}
 
 	}
+
+	export class NanoIntLit extends NanoExpression {
+
+		public toObject() {
+			return {
+				IntLit: [
+					dummySourceSpan,
+					this.num
+				]
+			};
+		}
+
+		constructor(public num: number) {
+			super();
+		}
+
+	}
+
+
 
 	export class NanoStringLit extends NanoExpression {
 
@@ -552,7 +662,41 @@ module TypeScript {
 
 	}
 
+	export class NanoUnaryAssignExpr extends NanoExpression {
 
+		public toObject() {
+			return {
+				UnaryAssignExpr: [
+					dummySourceSpan,
+					this.op.toObject(),
+					this.lval.toObject()
+				]
+			};
+		}
+
+		constructor(public op: NanoUnaryAssignOp, public lval: NanoLValue) {
+			super();
+		}
+
+	}
+
+	export class NanoPrefixExpr extends NanoExpression {
+
+		public toObject() {
+			return {
+				PrefixExpr: [
+					dummySourceSpan,
+					this.op.toObject(),
+					this.exp.toObject()
+				]
+			};
+		}
+		
+		constructor(public op: NanoPrefixOp, public exp: NanoExpression) {
+			super();
+		}
+
+	}
 
 
 
@@ -764,4 +908,77 @@ module TypeScript {
 			super();
 		}
 	}
+
+	export class NanoWhileStmt extends NanoStatement {
+
+		public toObject() {
+			return {
+				WhileStmt: [
+					dummySourceSpan,
+					this.exp.toObject(),
+					this.body.toObject()
+				]
+			};
+		}
+
+		constructor(public exp: NanoExpression, public body: NanoStatement) {
+			super();
+		}
 	}
+
+	export class NanoForStmt extends NanoStatement {
+
+		public toObject() {
+			return {
+				ForStmt: [
+					dummySourceSpan,
+					(this.init) ? this.init.toObject() : null,
+					(this.test) ? this.test.toObject() : null,
+					this.inc.toObject(),
+					this.body.toObject()
+				]
+			};
+		}
+
+		constructor(public init: NanoForInit, /*Maybe*/ public test: NanoExpression,
+			/*Maybe*/ public inc: NanoExpression, public body: NanoStatement) {
+			super();
+		}
+	}
+
+	export class NanoIfStmt extends NanoStatement {
+
+		public toObject() {
+			return {
+				IfStmt: [
+					dummySourceSpan,
+					this.cond.toObject(),
+					this.s1.toObject(),
+					this.s2.toObject()
+				]
+			};
+		}
+
+		constructor(public cond: NanoExpression, public s1: NanoStatement, public s2: NanoStatement) {
+			super();
+		}
+	}
+
+	export class NanoIfSingleStmt extends NanoStatement {
+
+		public toObject() {
+			return {
+				IfSingleStmt: [
+					dummySourceSpan,
+					this.cond.toObject(),
+					this.s.toObject(),
+				]
+			};
+		}
+
+		constructor(public cond: NanoExpression, public s: NanoStatement) {
+			super();
+		}
+	}
+
+}
