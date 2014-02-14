@@ -1,1 +1,8 @@
+Nano types:
+
 1. Add support for optional arguments.
+
+
+Nano AST:
+
+1. enum

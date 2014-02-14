@@ -535,6 +535,24 @@ module TypeScript {
 
 	}
 
+	export class NanoSuperExpr extends NanoExpression {
+
+		public toObject() {
+			return {
+				SuperExpr: [
+					dummySourceSpan,
+					this.args.toObject()
+				]
+			};
+		}
+
+		constructor(public args: NanoASTList<NanoExpression>) {
+			super();
+		}
+
+	}
+
+
 
 
 

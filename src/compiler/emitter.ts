@@ -618,7 +618,7 @@ module TypeScript {
 				this.emitIndent();
 				this.writeToOutput("/*@ ");
 				var tFunSig = new TFunctionSig(funcDecl.getSignature().map(p => p.toTFunctionSigMember()));
-				this.writeToOutput(funcDecl.name.text() + " :: " + tFunSig.toString());
+				this.writeToOutput(((funcDecl.isConstructor)? "" : (funcDecl.name.text() + " :: ")) + tFunSig.toString());
 				this.writeLineToOutput(" */");
 				this.emitIndent();
 			}

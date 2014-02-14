@@ -618,6 +618,9 @@ module TypeScript {
 
 		//NanoJS - begin
 		public toNanoExp(): NanoExpression {
+			if (this.target.nodeType() === NodeType.SuperExpression) {
+				return new NanoSuperExpr(this.arguments.toNanoExp());
+			}
 			return new NanoCallExpr(this.target.toNanoExp(), this.arguments.toNanoExp());	
 		}
 		//NanoJS - end
