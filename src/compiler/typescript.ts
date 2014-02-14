@@ -593,7 +593,7 @@ module TypeScript {
         // May throw exceptions.
         private emit(document: Document,
                      inputOutputMapper?: (inputName: string, outputName: string) => void ,
-                     emitter?: Emitter, jsonEmitter?: Emitter): Emitter[] {
+                     emitter?: Emitter): Emitter {
 
             var script = document.script;
             if (!script.isDeclareFile) {
@@ -602,11 +602,6 @@ module TypeScript {
                     var javaScriptFileName = this.emitOptions.mapOutputFileName(document, TypeScriptCompiler.mapToJSFileName);
                     var outFile = this.createFile(javaScriptFileName, this.writeByteOrderMarkForDocument(document));
                     emitter = new Emitter(javaScriptFileName, outFile, this.emitOptions, this.semanticInfoChain);
-
-					//NanoJs
-                    var jsonFileName = this.emitOptions.mapOutputFileName(document, TypeScriptCompiler.mapToJSONFileName);
-                    var jsonOutFile = this.createFile(jsonFileName, this.writeByteOrderMarkForDocument(document));
-					jsonEmitter = new Emitter(jsonFileName, jsonOutFile, this.emitOptions, this.semanticInfoChain);
 
                     if (this.settings.mapSourceFiles) {
                         // We always create map files next to the jsFiles
@@ -629,12 +624,39 @@ module TypeScript {
                 emitter.setDocument(document);
                 emitter.emitJavascript(script, /*startLine:*/false);
 
-                jsonEmitter.setDocument(document);
-                jsonEmitter.emitJSON(script, /*startLine:*/false);
             }
 
-            return [emitter, jsonEmitter];
+            return emitter;
         }
+
+		//NanoJS - begin
+        private emitJSON(document: Document,
+                     inputOutputMapper?: (inputName: string, outputName: string) => void ,
+                     emitter?: Emitter): Emitter {
+
+            var script = document.script;
+            if (!script.isDeclareFile) {
+                var typeScriptFileName = document.fileName;
+                if (!emitter) {
+                    var jsonFileName = this.emitOptions.mapOutputFileName(document, TypeScriptCompiler.mapToJSONFileName);
+                    var jsonOutFile = this.createFile(jsonFileName, this.writeByteOrderMarkForDocument(document));
+					emitter = new Emitter(jsonFileName, jsonOutFile, this.emitOptions, this.semanticInfoChain);
+
+                    if (inputOutputMapper) {
+                        // Remember the name of the outfile for this source file
+                        inputOutputMapper(typeScriptFileName, jsonFileName);
+                    }
+                }
+
+                // Set location info
+                emitter.setDocument(document);
+                emitter.emitJSON(script, /*startLine:*/false);
+            }
+
+            return emitter;
+        }
+		//NanoJS - end
+
 
         // Will not throw exceptions.
         public emitAll(ioHost: EmitterIOHost, inputOutputMapper?: (inputFile: string, outputFile: string) => void ): Diagnostic[] {
@@ -659,9 +681,10 @@ module TypeScript {
                     // Emitting module or multiple files, always goes to single file
                     if (this.emitOptions.outputMany || document.script.topLevelMod) {
                         // We're outputting to mulitple files.  We don't want to reuse an emitter in that case.
-                        var emitters = this.emit(document, inputOutputMapper);
-						var singleEmitter = emitters[0]; 
-						var singleJSONEmitter = emitters[1];
+                        var singleEmitter = this.emit(document, inputOutputMapper);
+						if (this.settings.nanoMode) {
+							var singleJSONEmitter = this.emitJSON(document, inputOutputMapper);
+						}
 
                         // Close the emitter after each emitted file.
                         if (singleEmitter) {
@@ -669,7 +692,7 @@ module TypeScript {
                         }
 
                         // Close the emitter after each emitted file.
-                        if (singleJSONEmitter) {
+                        if (this.settings.nanoMode && singleJSONEmitter) {
                             singleJSONEmitter.emitSourceMapsAndClose();
                         }
  
@@ -677,9 +700,10 @@ module TypeScript {
                     else {
                         // We're not outputting to multiple files.  Keep using the same emitter and don't
                         // close until below.
-                        var sharedEmitters = this.emit(document, inputOutputMapper, sharedEmitter, sharedJSONEmitter);
-						sharedEmitter = sharedEmitters[0];
-						sharedJSONEmitter = sharedEmitters[1];
+                        var sharedEmitter = this.emit(document, inputOutputMapper, sharedEmitter);
+						if (this.settings.nanoMode) {
+							sharedJSONEmitter = this.emitJSON(document, inputOutputMapper, sharedJSONEmitter);
+						}
                     }
                 }
                 catch (ex1) {
@@ -724,18 +748,20 @@ module TypeScript {
             if (this.emitOptions.outputMany || document.script.topLevelMod) {
                 // In outputMany mode, only emit the document specified and its sourceMap if needed
                 try {
-                    var emitters = this.emit(document, inputOutputMapper);
-					var emitter = emitters[0];
-					var jsonEmitter = emitters[1];
-
+                    var emitter = this.emit(document, inputOutputMapper);
                     // Close the emitter
                     if (emitter) {
                         emitter.emitSourceMapsAndClose();
                     }
-                    // Close the JSON emitter
-                    if (jsonEmitter) {
-                        jsonEmitter.emitSourceMapsAndClose();
-                    }
+
+					if (this.settings.nanoMode) {
+						var jsonEmitter = this.emitJSON(document, inputOutputMapper);
+						// Close the JSON emitter
+						if (jsonEmitter) {
+							jsonEmitter.emitSourceMapsAndClose();
+						}
+					}
+
                 }
                 catch (ex1) {
                     return Emitter.handleEmitterError(fileName, ex1);

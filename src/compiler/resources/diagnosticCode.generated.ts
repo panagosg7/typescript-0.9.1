@@ -382,6 +382,7 @@ module TypeScript {
         Use_of_deprecated_type_bool_Use_boolean_instead: "Use of deprecated type 'bool'. Use 'boolean' instead.",
         module_is_deprecated_Use_require_instead: "'module(...)' is deprecated. Use 'require(...)' instead.",
         Allow_bool_as_a_synonym_for_boolean: "Allow 'bool' as a synonym for 'boolean'.",
+        Translate_to_NanoJS: "Translate to NanoJS (in JSON format).",
         Allow_module_as_a_synonym_for_require: "Allow 'module(...)' as a synonym for 'require(...)'.",
     };
 }

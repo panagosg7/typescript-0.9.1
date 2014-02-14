@@ -424,6 +424,20 @@ module TypeScript {
                     this.compilationSettings.noLib = true;
                 }
             });
+            //NanoJS - begin
+            opts.flag('nano', {
+                usage: {
+                    locCode: DiagnosticCode.Translate_to_NanoJS,
+                    args: null
+                },
+                set: () => {
+                    this.compilationSettings.nanoMode = true;
+					//Nano mode implies that lib is not included so we don't have to issue it separately
+					this.compilationSettings.noLib = true;
+                }
+            });
+
+            //NanoJS - end
 
             opts.flag('diagnostics', {
                 experimental: true,

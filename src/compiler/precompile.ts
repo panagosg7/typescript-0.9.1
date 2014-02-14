@@ -29,6 +29,9 @@ module TypeScript {
         public noImplicitAny = false;
 
         public noLib = false;
+        //NanoJS - begin
+        public nanoMode = false;
+        //NanoJS - end
 
         public codeGenTarget = LanguageVersion.EcmaScript3;
         public moduleGenTarget = ModuleGenTarget.Unspecified;

@@ -9011,13 +9011,12 @@ module TypeScript {
 			//NanoJS - begin
 			resolver._emitInterfaces = (scriptName.indexOf("lib.d.ts") == -1)
 
-
-
-			getAstWalkerFactory().walk(script.moduleElements, function (ast: AST, parent: AST, walker: IAstWalker) {
-				console.log(((parent)?(NodeType[parent.nodeType()]  + " id: " + parent.astID) : "") + "\t\t--> " + NodeType[ast.nodeType()] + " id: " + ast.astID);
-				return ast;
-			});
-
+			if (compilationSettings.nanoMode) {
+				getAstWalkerFactory().walk(script.moduleElements, function (ast: AST, parent: AST, walker: IAstWalker) {
+					console.log(((parent) ? (NodeType[parent.nodeType()] + " id: " + parent.astID) : "") + "\t\t--> " + NodeType[ast.nodeType()] + " id: " + ast.astID);
+					return ast;
+				});
+			}
 			//NanoJS - end
 
             resolver.resolveAST(script.moduleElements, false, scriptDecl, context);
