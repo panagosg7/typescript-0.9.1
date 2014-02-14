@@ -2025,11 +2025,11 @@ module TypeScript {
 				return (<PullTypeParameterSymbol>this).toNJSTypeParameter();
 			}
 
-			if (this.isInterface()) {
+			if (this.isInterface() || this.isClass()) {
 				var tArgs: PullTypeSymbol[];
 				var typeArguments = this.getTypeArguments();
 				if (typeArguments) {
-					//If type arguments are not null, then use them (whether they are fixed or not
+					//If type arguments are not null, then use them (whether they are fixed or not)
 					tArgs = typeArguments;
 				} else {
 					//If type arguments are null, then use type parameters (this should be equivalent,
@@ -2039,10 +2039,6 @@ module TypeScript {
 
 				var nJSParams = tArgs.map(p => p.toNJSTypeParameter());
 				return new TTypeReference(this.fullName().split("<")[0], nJSParams);
-			}
-
-			if (this.isClass()) {
-				throw new Error("UNIMPLEMENTED:toNJSType:class");
 			}
 
 			if (this.isFunction()) {

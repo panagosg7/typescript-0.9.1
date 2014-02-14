@@ -62,6 +62,7 @@ module TypeScript {
 		toNanoExp(): NanoExpression;
 		toNanoStmt(): NanoStatement;
 		toNanoLValue(): NanoLValue;
+		toNanoClassElt(): NanoClassElt;
 
     }
 
@@ -212,12 +213,16 @@ module TypeScript {
 			throw new Error("toNanoStmt not implemented for " + NodeType[this.nodeType()]);
 		}
 
-		public toNanoMemList(): NanoASTList {
+		public toNanoMemList(): NanoASTList<NanoAST> {
 			throw new Error("toNanoMemList not implemented for " + NodeType[this.nodeType()]);
 		}
 
 		public toNanoLValue(): NanoLValue {
 			throw new Error("toNanoLValue not implemented for " + NodeType[this.nodeType()]);
+		}
+
+		public toNanoClassElt(): NanoClassElt {
+			throw new Error("toNanoClassElt not implemented for " + NodeType[this.nodeType()]);
 		}
 		//NanoJS - end
 
@@ -244,20 +249,24 @@ module TypeScript {
         }
 
 		//NanoJS - begin
-		public toNanoAST(): NanoASTList {
+		public toNanoAST(): NanoASTList<NanoAST> {
 			return new NanoASTList(this.members.map(m => m.toNanoAST()));
 		}
 
-		public toNanoExp(): NanoASTList {
+		public toNanoExp(): NanoASTList<NanoExpression> {
 			return new NanoASTList(this.members.map(m => m.toNanoExp()));
 		}
 
-		public toNanoStmt(): NanoASTList {
+		public toNanoStmt(): NanoASTList<NanoExpression> {
 			return new NanoASTList(this.members.map(m => m.toNanoStmt()));
 		}
 
-		public toNanoMemList(): NanoASTList {
+		public toNanoMemList(): NanoASTList<NanoAST> {
 			return new NanoASTList(this.members.map(m => m.toNanoMemList()));
+		}
+
+		public toNanoClassElt(): NanoASTList<NanoClassElt> {
+			return new NanoASTList(this.members.map(m => m.toNanoClassElt()));
 		}
 		//NanoJS - end
 
@@ -357,6 +366,22 @@ module TypeScript {
         public structuralEquals(ast: ParenthesizedExpression, includingPosition: boolean): boolean {
             return super.structuralEquals(ast, includingPosition);
         }
+
+		//NanoJS - begin
+		public toNanoExp(): NanoExpression {
+            switch (this.nodeType()) {
+                case NodeType.NullLiteral:
+					return new NanoNullLit();
+                case NodeType.FalseLiteral:
+					return new NanoBoolLit(false);
+                case NodeType.TrueLiteral:
+					return new NanoBoolLit(true);
+                default:
+                    throw Errors.abstract();
+            }
+		}
+		//NanoJS - end
+
     }
 
     export class ThisExpression extends AST {
@@ -376,6 +401,13 @@ module TypeScript {
         public structuralEquals(ast: ParenthesizedExpression, includingPosition: boolean): boolean {
             return super.structuralEquals(ast, includingPosition);
         }
+
+		//NanoJS - begin
+		public toNanoExp() {
+			return new NanoThisRef();
+		}
+		//NanoJS - end
+
     }
 
     export class SuperExpression extends AST {
@@ -551,6 +583,13 @@ module TypeScript {
                 structuralEquals(this.typeArguments, ast.typeArguments, includingPosition) &&
                 structuralEquals(this.arguments, ast.arguments, includingPosition);
         }
+
+		//NanoJS - begin
+		public toNanoExp(): NanoExpression {
+			return new NanoNewExpr(this.target.toNanoExp(), this.arguments.toNanoExp());
+		}
+		//NanoJS - begin
+
     }
 
     export class InvocationExpression extends AST implements ICallExpression {
@@ -756,6 +795,12 @@ module TypeScript {
 				case NodeType.SubtractExpression:
 				case NodeType.MultiplyExpression:
 				case NodeType.DivideExpression:
+				case NodeType.EqualsExpression:
+				case NodeType.EqualsWithTypeConversionExpression:
+				case NodeType.GreaterThanExpression:
+				case NodeType.GreaterThanOrEqualExpression:
+				case NodeType.LessThanExpression:
+				case NodeType.LessThanOrEqualExpression:
 				{
 					return new NanoInfixExpr(
 						new NanoInfixOp(BinaryExpression.getTextForBinaryToken(this.nodeType())),
@@ -763,12 +808,12 @@ module TypeScript {
 						this.operand2.toNanoExp());
 				}
 				default: 
-					throw new Error("UNIMMPLEMENTED:BinaryExpression:toNanoExp:Expression");
+					throw new Error("UNIMMPLEMENTED:BinaryExpression:toNanoExp:Expression for : " + NodeType[this.nodeType()]);
             }
 		}
 
 
-		public toNanoMemList(): NanoASTList {
+		public toNanoMemList(): NanoASTList<NanoAST> {
             switch (this.nodeType()) {
                 case NodeType.Member: {
 					switch (this.operand1.nodeType()) {
@@ -1046,12 +1091,14 @@ module TypeScript {
 		//NanoJS - begin
 		public toNanoAST(): NanoVarDecl {
 			// data VarDecl a = VarDecl a (Id a) (Maybe (Expression a))
-			if (this.init !== null) {
-				return new NanoVarDecl(this.id.toNanoAST(), this.init.toNanoExp());
-			}
-			else {
-				return new NanoVarDecl(this.id.toNanoAST());
-			}
+			return new NanoVarDecl(this.id.toNanoAST(), (this.init) ? this.init.toNanoExp() : null);
+		}
+
+		public toNanoClassElt(): NanoClassElt {
+			return new NanoMemberVarDecl(
+				hasFlag(this.getVarFlags(), VariableFlags.Public),
+				hasFlag(this.getVarFlags(), VariableFlags.Static),
+				new NanoVarDecl(this.id.toNanoAST(), (this.init) ? this.init.toNanoExp() : null));
 		}
 
 		//NanoJS - end
@@ -1180,15 +1227,32 @@ module TypeScript {
 		public toNanoExp(): NanoExpression {			
 			return new NanoFuncExpr(
 				(this.name) ? this.name.toNanoAST() : null,
-				this.arguments.toNanoAST(),
+				<NanoASTList<NanoId>>this.arguments.toNanoAST(),
 				new NanoASTList([this.block.toNanoStmt()]));
 		}
 
 		public toNanoStmt(): NanoStatement {
-			return new NanoFuncStmt(
+			return new NanoFunctionStmt(
 				this.name.toNanoAST(),
-				this.arguments.toNanoAST(),
+				<NanoASTList<NanoId>>this.arguments.toNanoAST(),
 				new NanoASTList([this.block.toNanoStmt()]));
+		}
+
+		public toNanoClassElt(): NanoClassElt {
+			if (this.isConstructor) {
+				return new NanoConstructor(
+					<NanoASTList<NanoId>>this.arguments.toNanoAST(),
+					new NanoASTList([this.block.toNanoStmt()]));
+
+			}
+			else {
+				return new NanoMemberMethDecl(
+					hasFlag(this.getFunctionFlags(), FunctionFlags.Public),
+					hasFlag(this.getFunctionFlags(), FunctionFlags.Static),
+					<NanoId>this.name.toNanoAST(),
+					<NanoASTList<NanoId>>this.arguments.toNanoAST(),
+					new NanoASTList([this.block.toNanoStmt()]));
+			}
 		}
 
 		//NanoJS end
@@ -1300,6 +1364,12 @@ module TypeScript {
                 emitter.emitComments(this, false);
             }
         }
+
+		//NanoJS - begin
+		public toNanoStmt(): NanoStatement {
+			throw new Error("ModuleDeclaration: " + this.name.text());
+		}
+		//NanoJS - end
     }
 
     export class TypeDeclaration extends AST {
@@ -1377,6 +1447,36 @@ module TypeScript {
         public emit(emitter: Emitter): void {
             emitter.emitClass(this);
         }
+
+		//NanoJS - begin
+		public toNanoStmt() {
+			//Extends
+			var parent: Identifier = null;
+			if (this.extendsList && this.extendsList.members) {
+				if (this.extendsList.members.length == 1) {
+					parent = <Identifier>this.extendsList.members[0];
+				}
+				else {
+					throw new Error("ClassDeclaration can only extend a single class.")
+				}
+			}
+			//Implements
+			var implementsInterfaces: Identifier[] =
+				(this.implementsList && this.implementsList.members) ? <Identifier[]>this.implementsList.members : [];
+			var implementsInterfacesIds = implementsInterfaces.map(i => <NanoId>i.toNanoAST());
+
+			return new NanoClassStmt(
+				this.name.toNanoAST(),
+				parent ? <NanoId>parent.toNanoAST() : null,
+				new NanoASTList<NanoId>(<any> implementsInterfacesIds),
+				this.members.toNanoClassElt());
+		}
+
+		public toNanoClassElt(): NanoClassElt {
+			throw new Error("UNIMPLEMENTED:ClassDeclaration:toNanoClassElt");
+		}
+
+		//NanoJS - end
     }
 
     export class InterfaceDeclaration extends TypeDeclaration {
@@ -1522,11 +1622,11 @@ module TypeScript {
 		//NanoJS - begin
 		//Equivalent to VarDeclStmt in language-ecmascript
 		public toNanoAST(): NanoVarDeclStmt {
-			return new NanoVarDeclStmt(this.declarators.toNanoAST());
+			return new NanoVarDeclStmt(<NanoASTList<NanoVarDecl>>this.declarators.toNanoAST());
 		}
 		
 		public toNanoStmt(): NanoVarDeclStmt {
-			return new NanoVarDeclStmt(this.declarators.toNanoAST());
+			return new NanoVarDeclStmt(<NanoASTList<NanoVarDecl>>this.declarators.toNanoAST());
 		}
 
 		//NanoJS - end

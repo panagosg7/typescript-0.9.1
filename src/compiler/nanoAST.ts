@@ -30,8 +30,8 @@ module TypeScript {
 	 * 
 	 *****************************************************************************/
 
-	export class NanoASTList extends NanoAST {
-		constructor(public members: NanoAST[]) {
+	export class NanoASTList<T extends NanoAST> extends NanoAST {
+		constructor(public members: T[]) {
 			super();
 		}
 
@@ -369,7 +369,7 @@ module TypeScript {
 			};
 		}
 		
-		constructor(public id: NanoId, public args: NanoASTList, public body: NanoASTList) {
+		constructor(public id: NanoId, public args: NanoASTList<NanoId>, public body: NanoASTList<NanoStatement>) {
 			super();
 		}
 	}
@@ -439,7 +439,7 @@ module TypeScript {
 			};
 		}
 		
-		constructor(public target: NanoExpression, public args: NanoASTList) {
+		constructor(public target: NanoExpression, public args: NanoASTList<NanoExpression>) {
 			super();
 		}
 	}
@@ -456,7 +456,7 @@ module TypeScript {
 			};
 		}
 		
-		constructor(public bindings: NanoASTList) {
+		constructor(public bindings: NanoASTList<INanoAST>) {
 			super();
 		}
 	}
@@ -479,6 +479,140 @@ module TypeScript {
 			super();
 		}
 	}
+
+	export class NanoThisRef extends NanoExpression {
+
+		public toObject() {
+			return {
+				ThisRef: dummySourceSpan
+			};
+		}
+		
+	}
+
+	export class NanoNullLit extends NanoExpression {
+
+		public toObject() {
+			return {
+				NullLit: dummySourceSpan
+			};
+		}
+		
+	}
+
+	export class NanoBoolLit extends NanoExpression {
+
+		public toObject() {
+			return {
+				BoolLit: [
+					dummySourceSpan,
+					this.b
+				]
+			};
+		}
+
+		constructor(public b: boolean) {
+			super();
+		}
+
+	}
+
+	export class NanoNewExpr extends NanoExpression {
+
+		public toObject() {
+			return {
+				NewExpr: [
+					dummySourceSpan,
+					this.e.toObject(),
+					this.es.toObject()
+				]
+			};
+		}
+
+		constructor(public e: NanoExpression, public es: NanoASTList<NanoExpression>) {
+			super();
+		}
+
+	}
+
+
+
+
+	/*****************************************************************************
+	 *
+	 *				Class Element
+	 * 
+	 *****************************************************************************/
+
+	export class NanoClassElt extends NanoAST {
+
+		public toObject(): any {
+			throw new Error("NanoClassElt: child class should implement toJSON");
+		}
+
+	}
+
+	export class NanoConstructor extends NanoClassElt {
+
+		public toObject(): any {
+			return {
+				Constructor: [
+					dummySourceSpan,
+					(this.args) ? this.args.toObject() : null,
+					this.body.toObject()
+				]
+			};
+		}
+
+		constructor(public /*Maybe*/ args: NanoASTList<NanoId>, public body: NanoASTList<NanoStatement>) {
+			super();
+		}
+	}
+
+	export class NanoMemberVarDecl extends NanoClassElt {
+
+		public toObject(): any {
+			return {
+				MemberVarDecl: [
+					dummySourceSpan,
+					this.mod,
+					this.sta,
+					this.vardecl.toObject()
+				]
+			};
+		}
+
+		constructor(public mod: boolean, public sta: boolean, public vardecl: NanoVarDecl) {
+			super();
+		}
+	}
+
+	export class NanoMemberMethDecl extends NanoClassElt {
+
+		public toObject(): any {
+			return {
+				MemberMethDecl: [
+					dummySourceSpan,
+					this.mod,
+					this.sta,
+					this.name.toObject(),
+					this.args.toObject(),
+					this.body.toObject()
+				]
+			};
+		}
+
+		constructor(public mod: boolean,
+			public sta: boolean,
+			public name: NanoId,
+			public args: NanoASTList<NanoId>,
+			public body: NanoASTList<NanoStatement>) {
+			super();
+		}
+	}
+
+
+
 
 
 
@@ -535,12 +669,12 @@ module TypeScript {
 			};
 		}
 
-		constructor(public varDecls: NanoASTList) {
+		constructor(public varDecls: NanoASTList<NanoVarDecl>) {
 			super();
 		}
 	}
 
-	export class NanoFuncStmt extends NanoStatement {
+	export class NanoFunctionStmt extends NanoStatement {
 
 		public toObject() {
 			return {
@@ -553,7 +687,7 @@ module TypeScript {
 			};
 		}
 		
-		constructor(public id: NanoId, public args: NanoASTList, public body: NanoASTList) {
+		constructor(public id: NanoId, public args: NanoASTList<NanoId>, public body: NanoASTList<NanoStatement>) {
 			super();
 		}
 	}
@@ -585,13 +719,31 @@ module TypeScript {
 			};
 		}
 		
-		constructor(public body: NanoASTList) {
+		constructor(public body: NanoASTList<NanoStatement>) {
 			super();
 		}
 	}
 
+	export class NanoClassStmt extends NanoStatement {
 
-
-
-
-}
+		public toObject() {
+			return {
+				ClassStmt: [
+					dummySourceSpan,
+					this.id.toObject(),
+					(this.extendsClass) ? this.extendsClass.toObject() : null,
+					this.implementsInterfaces.toObject(),
+					this.body.toObject() 
+				]
+			};
+		}
+		
+		constructor(
+			public id: NanoId,
+			public extendsClass/* Maybe */: NanoId,
+			public implementsInterfaces: NanoASTList<NanoId>,
+			public body: NanoASTList<NanoClassElt>) {
+			super();
+		}
+	}
+	}
