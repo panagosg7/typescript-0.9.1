@@ -60,6 +60,10 @@ module TypeScript {
 	export function setASTDocument(doc: Document) {
 		document = doc;
 	}
+	var semInfoChain: SemanticInfoChain = null;
+	export function setASTSemInfoChain(sic: SemanticInfoChain) {
+		semInfoChain = sic;
+	}
 	//NanoJS - end
 
 
@@ -250,6 +254,37 @@ module TypeScript {
 			console.log("Something went wrong with the lineMap.");
 			process.exit(1);
 		}
+
+		public getNanoAnnotations(): string[] {
+			var types: string[] = [];
+			var pre = this.preComments();
+			if (pre) {
+				pre.forEach((p: Comment) => {
+					p.text.forEach(s => {
+						var t = s.match("/\*@(.*)\\*/");
+						if (t && t[1]) {
+							types = types.concat([t[1]]);
+						}
+					});
+				});
+			}
+			return types;
+		}	
+
+		public getSingleNanoAnnotation(): string {
+			var t = this.getNanoAnnotations();
+			switch (t.length) {
+				case 0:
+					//console.log("No type annotations at: " + this.getSourceSpan(), null.toString());
+					return null;
+				case 1:
+					return t[0];
+				default:
+					console.log("Multiple type annotations at: " + this.getSourceSpan().toString());
+					console.log("Aborting compilation.");
+					process.exit(1);
+			}
+		}
 		//NanoJS - end
 
    }
@@ -341,15 +376,15 @@ module TypeScript {
 
 		//NanoJS - begin
 		public toNanoLValue(): NanoLValue {
-			return new NanoLVar(this.getSourceSpan(), this.actualText);
+			return new NanoLVar(this.getSourceSpan(), null, this.actualText);
 		}
 
 		public toNanoAST(): NanoId {
-			return new NanoId(this.getSourceSpan(), this.actualText);
+			return new NanoId(this.getSourceSpan(), null, this.actualText);
 		}
 
 		public toNanoExp(): NanoExpression {
-			return new NanoVarRef(this.getSourceSpan(), this.toNanoAST());
+			return new NanoVarRef(this.getSourceSpan(), null, this.toNanoAST());
 		}
 		//NanoJS - end
     }
@@ -401,11 +436,11 @@ module TypeScript {
 		public toNanoExp(): NanoExpression {
             switch (this.nodeType()) {
                 case NodeType.NullLiteral:
-					return new NanoNullLit(this.getSourceSpan());
+					return new NanoNullLit(this.getSourceSpan(), null);
                 case NodeType.FalseLiteral:
-					return new NanoBoolLit(this.getSourceSpan(), false);
+					return new NanoBoolLit(this.getSourceSpan(), null, false);
                 case NodeType.TrueLiteral:
-					return new NanoBoolLit(this.getSourceSpan(), true);
+					return new NanoBoolLit(this.getSourceSpan(), null, true);
                 default:
                     throw Errors.abstract();
             }
@@ -434,7 +469,7 @@ module TypeScript {
 
 		//NanoJS - begin
 		public toNanoExp() {
-			return new NanoThisRef(this.getSourceSpan());
+			return new NanoThisRef(this.getSourceSpan(), null);
 		}
 		//NanoJS - end
 
@@ -572,18 +607,18 @@ module TypeScript {
 		public toNanoExp(): NanoExpression {
 			switch (this.nodeType()) {
 				case NodeType.ObjectLiteralExpression:
-					return new NanoObjectLit(this.getSourceSpan(), this.operand.toNanoMemList());
+					return new NanoObjectLit(this.getSourceSpan(), null, this.operand.toNanoMemList());
 				case NodeType.PostIncrementExpression:
-					return new NanoUnaryAssignExpr(this.getSourceSpan(), new NanoUnaryAssignOp(NanoUnaryAssignOpKind.PostfixInc), this.operand.toNanoLValue());
+					return new NanoUnaryAssignExpr(this.getSourceSpan(), null, new NanoUnaryAssignOp(NanoUnaryAssignOpKind.PostfixInc), this.operand.toNanoLValue());
 				case NodeType.PreIncrementExpression:
-					return new NanoUnaryAssignExpr(this.getSourceSpan(), new NanoUnaryAssignOp(NanoUnaryAssignOpKind.PrefixInc), this.operand.toNanoLValue());
+					return new NanoUnaryAssignExpr(this.getSourceSpan(), null, new NanoUnaryAssignOp(NanoUnaryAssignOpKind.PrefixInc), this.operand.toNanoLValue());
 				case NodeType.PostDecrementExpression:
-					return new NanoUnaryAssignExpr(this.getSourceSpan(), new NanoUnaryAssignOp(NanoUnaryAssignOpKind.PostfixDec), this.operand.toNanoLValue());
+					return new NanoUnaryAssignExpr(this.getSourceSpan(), null, new NanoUnaryAssignOp(NanoUnaryAssignOpKind.PostfixDec), this.operand.toNanoLValue());
 				case NodeType.PreDecrementExpression:
-					return new NanoUnaryAssignExpr(this.getSourceSpan(), new NanoUnaryAssignOp(NanoUnaryAssignOpKind.PrefixDec), this.operand.toNanoLValue());
+					return new NanoUnaryAssignExpr(this.getSourceSpan(), null, new NanoUnaryAssignOp(NanoUnaryAssignOpKind.PrefixDec), this.operand.toNanoLValue());
 
 				case NodeType.NegateExpression:
-					return new NanoPrefixExpr(this.getSourceSpan(), new NanoPrefixOp(NanoPrefixOpKind.PrefixMinus), this.operand.toNanoExp());
+					return new NanoPrefixExpr(this.getSourceSpan(), null, new NanoPrefixOp(NanoPrefixOpKind.PrefixMinus), this.operand.toNanoExp());
 					
 				default:
 					throw new Error("UnaryExpression:toNanoExp nodetype not supported: " + NodeType[this.nodeType()]);
@@ -629,7 +664,7 @@ module TypeScript {
 
 		//NanoJS - begin
 		public toNanoExp(): NanoExpression {
-			return new NanoNewExpr(this.getSourceSpan(), this.target.toNanoExp(), this.arguments.toNanoExp());
+			return new NanoNewExpr(this.getSourceSpan(), null, this.target.toNanoExp(), this.arguments.toNanoExp());
 		}
 		//NanoJS - begin
 
@@ -662,9 +697,9 @@ module TypeScript {
 		//NanoJS - begin
 		public toNanoExp(): NanoExpression {
 			if (this.target.nodeType() === NodeType.SuperExpression) {
-				return new NanoSuperExpr(this.getSourceSpan(), this.arguments.toNanoExp());
+				return new NanoSuperExpr(this.getSourceSpan(), null, this.arguments.toNanoExp());
 			}
-			return new NanoCallExpr(this.getSourceSpan(), this.target.toNanoExp(), this.arguments.toNanoExp());	
+			return new NanoCallExpr(this.getSourceSpan(), null, this.target.toNanoExp(), this.arguments.toNanoExp());	
 		}
 		//NanoJS - end
 
@@ -789,14 +824,14 @@ module TypeScript {
 				case NodeType.MemberAccessExpression: {
 					switch (this.operand2.nodeType()) {
 						case NodeType.Name:
-							return new NanoLDot(this.getSourceSpan(), this.operand1.toNanoExp(), (<Identifier>this.operand2).actualText);
+							return new NanoLDot(this.getSourceSpan(), null, this.operand1.toNanoExp(), (<Identifier>this.operand2).actualText);
 					}
 					throw new Error("UNIMMPLEMENTED:BinaryExpression:toNanoAST:MemberAccessExpression:op2-nonId");
 				}
 				default: {
 					throw new Error("UNIMMPLEMENTED:BinaryExpression:toNanoAST:Expression");
                     //var binOp = BinaryExpression.getTextForBinaryToken(this.nodeType());
-					//return new NanoInfixExpr(this.getSourceSpan(), new NanoInfixOp(binOp), this.operand1.toNanoExp(), this.operand2.toNanoExp());
+					//return new NanoInfixExpr(this.getSourceSpan(), null, new NanoInfixOp(binOp), this.operand1.toNanoExp(), this.operand2.toNanoExp());
 				}
             }
 		}
@@ -806,11 +841,11 @@ module TypeScript {
 				case NodeType.MemberAccessExpression: {
 					switch (this.operand2.nodeType()) {
 						case NodeType.Name:
-							return new NanoLDot(this.getSourceSpan(), this.operand1.toNanoExp(), (<Identifier>this.operand2).actualText);
+							return new NanoLDot(this.getSourceSpan(), null, this.operand1.toNanoExp(), (<Identifier>this.operand2).actualText);
 					}
 				}
 				case NodeType.ElementAccessExpression: 
-					return new NanoLBracket(this.getSourceSpan(), this.operand1.toNanoExp(), this.operand2.toNanoExp());
+					return new NanoLBracket(this.getSourceSpan(), null, this.operand1.toNanoExp(), this.operand2.toNanoExp());
 				default: {
 					throw new Error("UNIMMPLEMENTED:BinaryExpression:toNanoLValue");
 				}
@@ -824,7 +859,7 @@ module TypeScript {
 				case NodeType.MemberAccessExpression: {
 					switch (this.operand2.nodeType()) {
 						case NodeType.Name:
-							return new NanoDotRef(this.getSourceSpan(), 
+							return new NanoDotRef(this.getSourceSpan(), null, 
 								this.operand1.toNanoExp(),
 								(<Identifier>this.operand2).toNanoAST());
 					}
@@ -832,13 +867,13 @@ module TypeScript {
 				}
 
 				case NodeType.AssignmentExpression: 
-					return new NanoAssignExpr(this.getSourceSpan(), 
+					return new NanoAssignExpr(this.getSourceSpan(), null, 
 						new NanoAssignOp(BinaryExpression.getTextForBinaryToken(this.nodeType())),
 						this.operand1.toNanoLValue(),
 						this.operand2.toNanoExp());
 
 				case NodeType.ElementAccessExpression: 
-					return new NanoBracketRef(this.getSourceSpan(), this.operand1.toNanoExp(), this.operand2.toNanoExp());
+					return new NanoBracketRef(this.getSourceSpan(), null, this.operand1.toNanoExp(), this.operand2.toNanoExp());
 
 				case NodeType.AddExpression:
 				case NodeType.SubtractExpression:
@@ -852,7 +887,7 @@ module TypeScript {
 				case NodeType.LessThanOrEqualExpression:
 				case NodeType.LogicalOrExpression:
 				case NodeType.LogicalAndExpression:
-					return new NanoInfixExpr(this.getSourceSpan(), 
+					return new NanoInfixExpr(this.getSourceSpan(), null, 
 						new NanoInfixOp(BinaryExpression.getTextForBinaryToken(this.nodeType())),
 						this.operand1.toNanoExp(),
 						this.operand2.toNanoExp());
@@ -861,7 +896,7 @@ module TypeScript {
 				case NodeType.SubtractAssignmentExpression:
 				case NodeType.DivideAssignmentExpression:
 				case NodeType.MultiplyAssignmentExpression:
-					return new NanoAssignExpr(this.getSourceSpan(), 
+					return new NanoAssignExpr(this.getSourceSpan(), null, 
 						new NanoAssignOp(BinaryExpression.getTextForBinaryToken(this.nodeType())),
 						this.operand1.toNanoLValue(),
 						this.operand2.toNanoExp());
@@ -878,17 +913,17 @@ module TypeScript {
 					switch (this.operand1.nodeType()) {
 						case NodeType.Name:
 							return new NanoASTList( [
-								new NanoPropId(this.getSourceSpan(), (<Identifier>this.operand1).toNanoAST()),
+								new NanoPropId(this.getSourceSpan(), null, (<Identifier>this.operand1).toNanoAST()),
 								this.operand2.toNanoExp()
 							]);
 						case NodeType.NumericLiteral:
 							return new NanoASTList([
-								new NanoPropNum(this.getSourceSpan(), (<NumberLiteral>this.operand1).value),
+								new NanoPropNum(this.getSourceSpan(), null, (<NumberLiteral>this.operand1).value),
 								this.operand2.toNanoExp()
 							]);
 						case NodeType.StringLiteral:
 							return new NanoASTList([
-								new NanoPropString(this.getSourceSpan(), (<StringLiteral>this.operand1).actualText),
+								new NanoPropString(this.getSourceSpan(), null, (<StringLiteral>this.operand1).actualText),
 								this.operand2.toNanoExp()
 							]);
 					}
@@ -959,10 +994,10 @@ module TypeScript {
 		public toNanoExp(): NanoExpression {
 			if (this.text().indexOf(".") === -1) {
 			//No decimal part
-				return new NanoIntLit(this.getSourceSpan(), this.value);
+				return new NanoIntLit(this.getSourceSpan(), null, this.value);
 			}
 			else {
-				return new NanoNumLit(this.getSourceSpan(), this.value);
+				return new NanoNumLit(this.getSourceSpan(), null, this.value);
 			}
 		}
 		//NanoJS - end
@@ -1015,7 +1050,7 @@ module TypeScript {
 
 		//NanoJS - begin
 		public toNanoExp(): NanoStringLit {
-			return new NanoStringLit(this.getSourceSpan(), this.actualText);
+			return new NanoStringLit(this.getSourceSpan(), null, this.actualText);
 		}
 		//NanoJS - end
 
@@ -1156,14 +1191,14 @@ module TypeScript {
 		//NanoJS - begin
 		public toNanoAST(): NanoVarDecl {
 			// data VarDecl a = VarDecl a (Id a) (Maybe (Expression a))
-			return new NanoVarDecl(this.getSourceSpan(), this.id.toNanoAST(), (this.init) ? this.init.toNanoExp() : null);
+			return new NanoVarDecl(this.getSourceSpan(), null, this.id.toNanoAST(), (this.init) ? this.init.toNanoExp() : null);
 		}
 
 		public toNanoClassElt(): NanoClassElt {
-			return new NanoMemberVarDecl(this.getSourceSpan(), 
+			return new NanoMemberVarDecl(this.getSourceSpan(), null, 
 				hasFlag(this.getVarFlags(), VariableFlags.Public),
 				hasFlag(this.getVarFlags(), VariableFlags.Static),
-				new NanoVarDecl(this.getSourceSpan(), this.id.toNanoAST(), (this.init) ? this.init.toNanoExp() : null));
+				new NanoVarDecl(this.getSourceSpan(), null, this.id.toNanoAST(), (this.init) ? this.init.toNanoExp() : null));
 		}
 
 		//NanoJS - end
@@ -1290,14 +1325,18 @@ module TypeScript {
 		//TypeScript bunches up function expressions and statements. So we'll need 
 		//to give implementations for both and have the caller decide which one to use.
 		public toNanoExp(): NanoExpression {			
-			return new NanoFuncExpr(this.getSourceSpan(), 
+			return new NanoFuncExpr(this.getSourceSpan(), null, 
 				(this.name) ? this.name.toNanoAST() : null,
 				<NanoASTList<NanoId>>this.arguments.toNanoAST(),
 				new NanoASTList([this.block.toNanoStmt()]));
 		}
 
 		public toNanoStmt(): NanoStatement {
-			return new NanoFunctionStmt(this.getSourceSpan(), 
+
+			var tFunSig = new TFunctionSig(this.getSignature().map(p => p.toTFunctionSigMember()));
+			//console.log(this.getSourceSpan(), null.toString() + " " + this.name.text() + " :: " + tFunSig.toString());
+
+			return new NanoFunctionStmt(this.getSourceSpan(), this.getSingleNanoAnnotation(), 
 				this.name.toNanoAST(),
 				<NanoASTList<NanoId>>this.arguments.toNanoAST(),
 				new NanoASTList([this.block.toNanoStmt()]));
@@ -1305,13 +1344,19 @@ module TypeScript {
 
 		public toNanoClassElt(): NanoClassElt {
 			if (this.isConstructor) {
-				return new NanoConstructor(this.getSourceSpan(), 
+				var tFunSig = new TFunctionSig(this.getSignature().map(p => p.toTFunctionSigMember()));
+				var decl: PullDecl = semInfoChain.getDeclForAST(this, document.fileName);
+				var symb = decl.getSymbol();
+				//console.log(this.getSourceSpan(), null.toString() + " constructor :: " + symb.toString());
+
+				return new NanoConstructor(this.getSourceSpan(),
+					this.getSingleNanoAnnotation(),
 					<NanoASTList<NanoId>>this.arguments.toNanoAST(),
 					new NanoASTList([this.block.toNanoStmt()]));
 
 			}
 			else {
-				return new NanoMemberMethDecl(this.getSourceSpan(), 
+				return new NanoMemberMethDecl(this.getSourceSpan(), this.getSingleNanoAnnotation(), 
 					hasFlag(this.getFunctionFlags(), FunctionFlags.Public),
 					hasFlag(this.getFunctionFlags(), FunctionFlags.Static),
 					<NanoId>this.name.toNanoAST(),
@@ -1530,7 +1575,7 @@ module TypeScript {
 				(this.implementsList && this.implementsList.members) ? <Identifier[]>this.implementsList.members : [];
 			var implementsInterfacesIds = implementsInterfaces.map(i => <NanoId>i.toNanoAST());
 
-			return new NanoClassStmt(this.getSourceSpan(), 
+			return new NanoClassStmt(this.getSourceSpan(), null, 
 				this.name.toNanoAST(),
 				parent ? <NanoId>parent.toNanoAST() : null,
 				new NanoASTList<NanoId>(<any> implementsInterfacesIds),
@@ -1632,7 +1677,7 @@ module TypeScript {
 
 		//NanoJS - begin
 		public toNanoStmt(): NanoExprStmt {
-			return new NanoExprStmt(this.getSourceSpan(), this.expression.toNanoExp());
+			return new NanoExprStmt(this.getSourceSpan(), null, this.expression.toNanoExp());
 		}
 		//NanoJS - end
 
@@ -1687,15 +1732,15 @@ module TypeScript {
 		//NanoJS - begin
 		//Equivalent to VarDeclStmt in language-ecmascript
 		public toNanoForInit(): NanoForInit {
-			return new NanoVarInit(this.getSourceSpan(), <NanoASTList<NanoVarDecl>>this.declarators.toNanoAST());
+			return new NanoVarInit(this.getSourceSpan(), null, <NanoASTList<NanoVarDecl>>this.declarators.toNanoAST());
 		}
 
 		public toNanoAST(): NanoVarDeclStmt {
-			return new NanoVarDeclStmt(this.getSourceSpan(), <NanoASTList<NanoVarDecl>>this.declarators.toNanoAST());
+			return new NanoVarDeclStmt(this.getSourceSpan(), null, <NanoASTList<NanoVarDecl>>this.declarators.toNanoAST());
 		}
 		
 		public toNanoStmt(): NanoVarDeclStmt {
-			return new NanoVarDeclStmt(this.getSourceSpan(), <NanoASTList<NanoVarDecl>>this.declarators.toNanoAST());
+			return new NanoVarDeclStmt(this.getSourceSpan(), null, <NanoASTList<NanoVarDecl>>this.declarators.toNanoAST());
 		}
 
 		//NanoJS - end
@@ -1781,7 +1826,7 @@ module TypeScript {
 
 
 		public toNanoStmt(): NanoStatement {
-			return new NanoBlockStmt(this.getSourceSpan(), this.statements.toNanoStmt());
+			return new NanoBlockStmt(this.getSourceSpan(), null, this.statements.toNanoStmt());
 		}
 
     }
@@ -1848,7 +1893,7 @@ module TypeScript {
 
 		//NanoJS - begin
 		public toNanoStmt(): NanoStatement {
-			return new NanoWhileStmt(this.getSourceSpan(), this.cond.toNanoExp(), this.body.toNanoStmt());
+			return new NanoWhileStmt(this.getSourceSpan(), null, this.cond.toNanoExp(), this.body.toNanoStmt());
 		}
     }
 
@@ -1934,10 +1979,10 @@ module TypeScript {
 		//NanoJS - begin
 		public toNanoStmt(): NanoStatement {
 			if (this.elseBod) {
-				return new NanoIfStmt(this.getSourceSpan(), this.cond.toNanoExp(), this.thenBod.toNanoStmt(), this.elseBod.toNanoStmt());
+				return new NanoIfStmt(this.getSourceSpan(), null, this.cond.toNanoExp(), this.thenBod.toNanoStmt(), this.elseBod.toNanoStmt());
 			}
 			else {
-				return new NanoIfSingleStmt(this.getSourceSpan(), this.cond.toNanoExp(), this.thenBod.toNanoStmt());
+				return new NanoIfSingleStmt(this.getSourceSpan(), null, this.cond.toNanoExp(), this.thenBod.toNanoStmt());
 			}
 		}
 		//NanoJS - end
@@ -1976,7 +2021,7 @@ module TypeScript {
 		//NanoJS - begin
 		public toNanoStmt(): NanoStatement {
 			var ret = this.returnExpression.toNanoExp();
-			return new NanoReturnStmt(this.getSourceSpan(), ret);
+			return new NanoReturnStmt(this.getSourceSpan(), null, ret);
 		}
 		//NanoJS - end
 
@@ -2061,7 +2106,7 @@ module TypeScript {
 
 		//NanoJS - begin
 		public toNanoStmt(): NanoStatement {
-			return new NanoForStmt(this.getSourceSpan(), this.init.toNanoForInit(),
+			return new NanoForStmt(this.getSourceSpan(), null, this.init.toNanoForInit(),
 				this.cond.toNanoExp(),
 				this.incr.toNanoExp(),
 				this.body.toNanoStmt());
@@ -2362,7 +2407,7 @@ module TypeScript {
 
 		//NanoJS - begin
 		public toNanoStmt() {
-			return new NanoEmptyStmt(this.getSourceSpan());
+			return new NanoEmptyStmt(this.getSourceSpan(), null);
 		}
 		//NanoJS - end
 

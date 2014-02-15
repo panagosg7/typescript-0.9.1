@@ -29,6 +29,11 @@ module TypeScript {
 			};
 		}
 
+		public toString(): string {
+			return this.file + ": (" + (this.start.line() + 1) + ", " + (this.start.character() + 1) +
+				") - (" + (this.stop.line() + 1) + ", " + (this.stop.character() + 1) + ")";
+		}
+
 		constructor(private file: string, private start: LineAndCharacter, private stop: LineAndCharacter) { }
 
 	}
@@ -52,7 +57,7 @@ module TypeScript {
 
 	export class NanoId extends NanoAST {
 
-		constructor(public span: NanoSourceSpan, public id: string) {
+		constructor(public span: NanoSourceSpan, public ann: string, public id: string) {
 			super();
 		}
 
@@ -75,7 +80,7 @@ module TypeScript {
 			];
 		}
 
-		constructor(public span: NanoSourceSpan, public x: NanoId, public exp?: NanoExpression) {
+		constructor(public span: NanoSourceSpan, public ann: string, public x: NanoId, public exp?: NanoExpression) {
 			super();
 		}
 	}
@@ -91,7 +96,7 @@ module TypeScript {
 			};
 		}
 
-		constructor(public span: NanoSourceSpan, public f: NanoId) {
+		constructor(public span: NanoSourceSpan, public ann: string, public f: NanoId) {
 			super();
 		}
 	}
@@ -107,7 +112,7 @@ module TypeScript {
 			};
 		}
 
-		constructor(public span: NanoSourceSpan, public s: string) {
+		constructor(public span: NanoSourceSpan, public ann: string, public s: string) {
 			super();
 		}
 	}
@@ -123,7 +128,7 @@ module TypeScript {
 			};
 		}
 
-		constructor(public span: NanoSourceSpan, public n: number) {
+		constructor(public span: NanoSourceSpan, public ann: string, public n: number) {
 			super();
 		}
 	}
@@ -143,7 +148,7 @@ module TypeScript {
 			return { NoInit: this.span.toObject() };
 		}
 
-		constructor(public span: NanoSourceSpan) {
+		constructor(public span: NanoSourceSpan, public ann: string) {
 			super();
 		}
 
@@ -155,7 +160,7 @@ module TypeScript {
 			return { VarInit: this.vds.toObject() };
 		}
 
-		constructor(public span: NanoSourceSpan, public vds: NanoASTList<NanoVarDecl>) {
+		constructor(public span: NanoSourceSpan, public ann: string, public vds: NanoASTList<NanoVarDecl>) {
 			super();
 		}
 
@@ -172,7 +177,7 @@ module TypeScript {
 			};
 		}
 
-		constructor(public span: NanoSourceSpan, public exp: NanoExpression) {
+		constructor(public span: NanoSourceSpan, public ann: string, public exp: NanoExpression) {
 			super();
 		}
 
@@ -352,7 +357,7 @@ module TypeScript {
 			};
 		}
 
-		constructor(public span: NanoSourceSpan, public s: string) {
+		constructor(public span: NanoSourceSpan, public ann: string, public s: string) {
 			super();
 		}
 	}
@@ -370,7 +375,7 @@ module TypeScript {
 			};
 		}
 
-		constructor(public span: NanoSourceSpan, public exp: NanoExpression, public str: string) {
+		constructor(public span: NanoSourceSpan, public ann: string, public exp: NanoExpression, public str: string) {
 			super();
 		}
 	}
@@ -388,7 +393,7 @@ module TypeScript {
 			};
 		}
 
-		constructor(public span: NanoSourceSpan, public e1: NanoExpression, public e2: NanoExpression) {
+		constructor(public span: NanoSourceSpan, public ann: string, public e1: NanoExpression, public e2: NanoExpression) {
 			super();
 		}
 	}
@@ -418,7 +423,7 @@ module TypeScript {
 			};
 		}
 
-		constructor(public span: NanoSourceSpan, public op: NanoInfixOp, public operand1: NanoExpression, public operand2: NanoExpression) {
+		constructor(public span: NanoSourceSpan, public ann: string, public op: NanoInfixOp, public operand1: NanoExpression, public operand2: NanoExpression) {
 			super();
 		}
 
@@ -435,7 +440,7 @@ module TypeScript {
 			};
 		}
 
-		constructor(public span: NanoSourceSpan, public num: number) {
+		constructor(public span: NanoSourceSpan, public ann: string, public num: number) {
 			super();
 		}
 
@@ -452,7 +457,7 @@ module TypeScript {
 			};
 		}
 
-		constructor(public span: NanoSourceSpan, public num: number) {
+		constructor(public span: NanoSourceSpan, public ann: string, public num: number) {
 			super();
 		}
 
@@ -472,7 +477,7 @@ module TypeScript {
 			};
 		}
 
-		constructor(public span: NanoSourceSpan, public str: string) {
+		constructor(public span: NanoSourceSpan, public ann: string, public str: string) {
 			super();
 		}
 
@@ -493,7 +498,7 @@ module TypeScript {
 			};
 		}
 		
-		constructor(public span: NanoSourceSpan, public id: NanoId, public args: NanoASTList<NanoId>, public body: NanoASTList<NanoStatement>) {
+		constructor(public span: NanoSourceSpan, public ann: string, public id: NanoId, public args: NanoASTList<NanoId>, public body: NanoASTList<NanoStatement>) {
 			super();
 		}
 	}
@@ -509,7 +514,7 @@ module TypeScript {
 			};
 		}
 		
-		constructor(public span: NanoSourceSpan, public id: NanoId) {
+		constructor(public span: NanoSourceSpan, public ann: string, public id: NanoId) {
 			super();
 		}
 	}
@@ -526,7 +531,7 @@ module TypeScript {
 			};
 		}
 		
-		constructor(public span: NanoSourceSpan, public expression: NanoExpression, public id: NanoId) {
+		constructor(public span: NanoSourceSpan, public ann: string, public expression: NanoExpression, public id: NanoId) {
 			super();
 		}
 	}
@@ -543,7 +548,7 @@ module TypeScript {
 			};
 		}
 		
-		constructor(public span: NanoSourceSpan, public e1: NanoExpression, public e2: NanoExpression) {
+		constructor(public span: NanoSourceSpan, public ann: string, public e1: NanoExpression, public e2: NanoExpression) {
 			super();
 		}
 	}
@@ -563,7 +568,7 @@ module TypeScript {
 			};
 		}
 		
-		constructor(public span: NanoSourceSpan, public target: NanoExpression, public args: NanoASTList<NanoExpression>) {
+		constructor(public span: NanoSourceSpan, public ann: string, public target: NanoExpression, public args: NanoASTList<NanoExpression>) {
 			super();
 		}
 	}
@@ -580,7 +585,7 @@ module TypeScript {
 			};
 		}
 		
-		constructor(public span: NanoSourceSpan, public bindings: NanoASTList<INanoAST>) {
+		constructor(public span: NanoSourceSpan, public ann: string, public bindings: NanoASTList<INanoAST>) {
 			super();
 		}
 	}
@@ -599,7 +604,7 @@ module TypeScript {
 			};
 		}
 		
-		constructor(public span: NanoSourceSpan, public assignOp: NanoAssignOp, public lval: NanoLValue, public expression: NanoExpression) {
+		constructor(public span: NanoSourceSpan, public ann: string, public assignOp: NanoAssignOp, public lval: NanoLValue, public expression: NanoExpression) {
 			super();
 		}
 	}
@@ -612,7 +617,7 @@ module TypeScript {
 			};
 		}
 
-		constructor(public span: NanoSourceSpan) {
+		constructor(public span: NanoSourceSpan, public ann: string) {
 			super();
 		}
 		
@@ -626,7 +631,7 @@ module TypeScript {
 			};
 		}
 
-		constructor(public span: NanoSourceSpan) {
+		constructor(public span: NanoSourceSpan, public ann: string) {
 			super();
 		}
 		
@@ -643,7 +648,7 @@ module TypeScript {
 			};
 		}
 
-		constructor(public span: NanoSourceSpan, public b: boolean) {
+		constructor(public span: NanoSourceSpan, public ann: string, public b: boolean) {
 			super();
 		}
 
@@ -661,7 +666,7 @@ module TypeScript {
 			};
 		}
 
-		constructor(public span: NanoSourceSpan, public e: NanoExpression, public es: NanoASTList<NanoExpression>) {
+		constructor(public span: NanoSourceSpan, public ann: string, public e: NanoExpression, public es: NanoASTList<NanoExpression>) {
 			super();
 		}
 
@@ -678,7 +683,7 @@ module TypeScript {
 			};
 		}
 
-		constructor(public span: NanoSourceSpan, public args: NanoASTList<NanoExpression>) {
+		constructor(public span: NanoSourceSpan, public ann: string, public args: NanoASTList<NanoExpression>) {
 			super();
 		}
 
@@ -696,7 +701,7 @@ module TypeScript {
 			};
 		}
 
-		constructor(public span: NanoSourceSpan, public op: NanoUnaryAssignOp, public lval: NanoLValue) {
+		constructor(public span: NanoSourceSpan, public ann: string, public op: NanoUnaryAssignOp, public lval: NanoLValue) {
 			super();
 		}
 
@@ -714,7 +719,7 @@ module TypeScript {
 			};
 		}
 		
-		constructor(public span: NanoSourceSpan, public op: NanoPrefixOp, public exp: NanoExpression) {
+		constructor(public span: NanoSourceSpan, public ann: string, public op: NanoPrefixOp, public exp: NanoExpression) {
 			super();
 		}
 
@@ -748,7 +753,7 @@ module TypeScript {
 			};
 		}
 
-		constructor(public span: NanoSourceSpan, public /*Maybe*/ args: NanoASTList<NanoId>, public body: NanoASTList<NanoStatement>) {
+		constructor(public span: NanoSourceSpan, public ann: string, public /*Maybe*/ args: NanoASTList<NanoId>, public body: NanoASTList<NanoStatement>) {
 			super();
 		}
 	}
@@ -766,7 +771,7 @@ module TypeScript {
 			};
 		}
 
-		constructor(public span: NanoSourceSpan, public mod: boolean, public sta: boolean, public vardecl: NanoVarDecl) {
+		constructor(public span: NanoSourceSpan, public ann: string, public mod: boolean, public sta: boolean, public vardecl: NanoVarDecl) {
 			super();
 		}
 	}
@@ -786,7 +791,7 @@ module TypeScript {
 			};
 		}
 
-		constructor(public span: NanoSourceSpan, public mod: boolean,
+		constructor(public span: NanoSourceSpan, public ann: string, public mod: boolean,
 			public sta: boolean,
 			public name: NanoId,
 			public args: NanoASTList<NanoId>,
@@ -819,7 +824,7 @@ module TypeScript {
 			return { EmptyStmt: this.span.toObject() };
 		}
 
-		constructor(public span: NanoSourceSpan) {
+		constructor(public span: NanoSourceSpan, public ann: string) {
 			super();
 		}
 	}
@@ -837,7 +842,7 @@ module TypeScript {
 			};
 		}
 
-		constructor(public span: NanoSourceSpan, public exp: NanoExpression) {
+		constructor(public span: NanoSourceSpan, public ann: string, public exp: NanoExpression) {
 			super();
 		}
 	}
@@ -853,7 +858,7 @@ module TypeScript {
 			};
 		}
 
-		constructor(public span: NanoSourceSpan, public varDecls: NanoASTList<NanoVarDecl>) {
+		constructor(public span: NanoSourceSpan, public ann: string, public varDecls: NanoASTList<NanoVarDecl>) {
 			super();
 		}
 	}
@@ -871,7 +876,7 @@ module TypeScript {
 			};
 		}
 		
-		constructor(public span: NanoSourceSpan, public id: NanoId, public args: NanoASTList<NanoId>, public body: NanoASTList<NanoStatement>) {
+		constructor(public span: NanoSourceSpan, public ann: string, public id: NanoId, public args: NanoASTList<NanoId>, public body: NanoASTList<NanoStatement>) {
 			super();
 		}
 	}
@@ -887,7 +892,7 @@ module TypeScript {
 			};
 		}
 		
-		constructor(public span: NanoSourceSpan, public expression: NanoExpression) {
+		constructor(public span: NanoSourceSpan, public ann: string, public expression: NanoExpression) {
 			super();
 		}
 	}
@@ -903,7 +908,7 @@ module TypeScript {
 			};
 		}
 		
-		constructor(public span: NanoSourceSpan, public body: NanoASTList<NanoStatement>) {
+		constructor(public span: NanoSourceSpan, public ann: string, public body: NanoASTList<NanoStatement>) {
 			super();
 		}
 	}
@@ -922,7 +927,7 @@ module TypeScript {
 			};
 		}
 		
-		constructor(public span: NanoSourceSpan, 
+		constructor(public span: NanoSourceSpan, public ann: string, 
 			public id: NanoId,
 			public extendsClass/* Maybe */: NanoId,
 			public implementsInterfaces: NanoASTList<NanoId>,
@@ -943,7 +948,7 @@ module TypeScript {
 			};
 		}
 
-		constructor(public span: NanoSourceSpan, public exp: NanoExpression, public body: NanoStatement) {
+		constructor(public span: NanoSourceSpan, public ann: string, public exp: NanoExpression, public body: NanoStatement) {
 			super();
 		}
 	}
@@ -962,7 +967,7 @@ module TypeScript {
 			};
 		}
 
-		constructor(public span: NanoSourceSpan, public init: NanoForInit, /*Maybe*/ public test: NanoExpression,
+		constructor(public span: NanoSourceSpan, public ann: string, public init: NanoForInit, /*Maybe*/ public test: NanoExpression,
 			/*Maybe*/ public inc: NanoExpression, public body: NanoStatement) {
 			super();
 		}
@@ -981,7 +986,7 @@ module TypeScript {
 			};
 		}
 
-		constructor(public span: NanoSourceSpan, public cond: NanoExpression, public s1: NanoStatement, public s2: NanoStatement) {
+		constructor(public span: NanoSourceSpan, public ann: string, public cond: NanoExpression, public s1: NanoStatement, public s2: NanoStatement) {
 			super();
 		}
 	}
@@ -998,7 +1003,7 @@ module TypeScript {
 			};
 		}
 
-		constructor(public span: NanoSourceSpan, public cond: NanoExpression, public s: NanoStatement) {
+		constructor(public span: NanoSourceSpan, public ann: string, public cond: NanoExpression, public s: NanoStatement) {
 			super();
 		}
 	}

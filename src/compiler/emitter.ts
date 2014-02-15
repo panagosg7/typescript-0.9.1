@@ -1801,6 +1801,7 @@ module TypeScript {
                 return;
             }
 			setASTDocument(doc);	//Important - set this here.
+			setASTSemInfoChain(this.semanticInfoChain);
 			var json = JSON.stringify(doc.script.toNanoAST().toObject(), undefined, 2);
 			this.writeToOutput(json);
         }
