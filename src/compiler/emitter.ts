@@ -1796,11 +1796,12 @@ module TypeScript {
 
 		//NanoJS - begin
         // tokenId is the id the preceding token
-        public emitJSON(ast: AST, startLine: boolean) {
-            if (ast === null) {
+        public emitJSON(doc: Document, startLine: boolean) {
+            if (doc === null) {
                 return;
             }
-			var json = JSON.stringify(ast.toNanoAST().toObject(), undefined, 2);
+			setASTDocument(doc);	//Important - set this here.
+			var json = JSON.stringify(doc.script.toNanoAST().toObject(), undefined, 2);
 			this.writeToOutput(json);
         }
 		//NanoJS - end

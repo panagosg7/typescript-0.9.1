@@ -15,7 +15,9 @@ class A {
 class B extends A {
 
   /*@ () => void */
-  constructor() { }
+  constructor() {
+    super();
+  }
 
   public b /*@ { number | v > 5 } */ = 10;
 

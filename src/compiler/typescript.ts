@@ -650,7 +650,7 @@ module TypeScript {
 
                 // Set location info
                 emitter.setDocument(document);
-                emitter.emitJSON(script, /*startLine:*/false);
+                emitter.emitJSON(document, /*startLine:*/false);
             }
 
             return emitter;
