@@ -125,7 +125,7 @@ var compilerSources = [
 	"typecheck/pullSymbols.ts",
 	"typecheck/pullTypeResolution.ts",
 	"typecheck/pullTypeResolutionContext.ts",
-	"typecheck/SemanticDiagnostic.ts",
+//	"typecheck/SemanticDiagnostic.ts",
 	"typecheck/translate.ts",
 	"typescript.ts"
 ].map(function (f) {
