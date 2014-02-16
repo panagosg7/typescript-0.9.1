@@ -6,3 +6,6 @@ Nano types:
 Nano AST:
 
 1. enum
+
+2. Move to aeson-0.7, which has a different format: { content: ..., tag: ... }
+

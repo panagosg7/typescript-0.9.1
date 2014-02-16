@@ -63,7 +63,7 @@ module TypeScript {
 
 		public toObject(): any {
 			return [
-				this.span.toObject(),
+				[this.span.toObject(), null],
 				this.id
 			];
 		}
@@ -74,7 +74,7 @@ module TypeScript {
 
 		public toObject(): any {
 			return [
-				this.span.toObject(),
+				[this.span.toObject(), null],
 				this.x.toObject(),
 				(this.exp) ? this.exp.toObject() : null
 			];
@@ -90,7 +90,7 @@ module TypeScript {
 		public toObject(): any {
 			return {
 				PropId: [
-					this.span.toObject(),
+					[this.span.toObject(), null],
 					this.f.toObject()
 				]
 			};
@@ -106,7 +106,7 @@ module TypeScript {
 		public toObject(): any {
 			return {
 				PropString: [
-					this.span.toObject(),
+					[this.span.toObject(), null],
 					this.s
 				]
 			};
@@ -122,7 +122,7 @@ module TypeScript {
 		public toObject(): any {
 			return {
 				PropNum: [
-					this.span.toObject(),
+					[this.span.toObject(), null],
 					this.n
 				]
 			};
@@ -145,7 +145,7 @@ module TypeScript {
 	export class NanoNoInit extends NanoForInit {
 
 		public toObject(): any {
-			return { NoInit: this.span.toObject() };
+			return { NoInit: [this.span.toObject(), null] };
 		}
 
 		constructor(public span: NanoSourceSpan, public ann: string) {
@@ -171,7 +171,7 @@ module TypeScript {
 		public toObject(): any {
 			return {
 				ExprInit: [
-					this.span.toObject(),
+					[this.span.toObject(), null],
 					this.exp.toObject()
 				]
 			};
@@ -351,7 +351,7 @@ module TypeScript {
 		public toObject(): any {
 			return {
 				LVar: [
-					this.span.toObject(),
+					[this.span.toObject(), null],
 					this.s
 				]
 			};
@@ -368,7 +368,7 @@ module TypeScript {
 		public toObject(): any {
 			return {
 				LDot: [
-					this.span.toObject(),
+					[this.span.toObject(), null],
 					this.exp.toObject(),
 					this.str
 				]
@@ -386,7 +386,7 @@ module TypeScript {
 		public toObject(): any {
 			return {
 				LBracket: [
-					this.span.toObject(),
+					[this.span.toObject(), null],
 					this.e1.toObject(),
 					this.e1.toObject()
 				]
@@ -415,7 +415,7 @@ module TypeScript {
 		public toObject() {
 			return {
 				InfixExpr: [
-					this.span.toObject(),
+					[this.span.toObject(), null],
 					this.op.toObject(),
 					this.operand1.toObject(),
 					this.operand2.toObject()
@@ -434,7 +434,7 @@ module TypeScript {
 		public toObject() {
 			return {
 				NumLit: [
-					this.span.toObject(),
+					[this.span.toObject(), null],
 					this.num
 				]
 			};
@@ -451,7 +451,7 @@ module TypeScript {
 		public toObject() {
 			return {
 				IntLit: [
-					this.span.toObject(),
+					[this.span.toObject(), null],
 					this.num
 				]
 			};
@@ -470,7 +470,7 @@ module TypeScript {
 		public toObject() {
 			return {
 				StringLit: [
-					this.span.toObject(),
+					[this.span.toObject(), null],
 					//TODO: strings appear with '\"' in beginning and end
 					this.str.toString()
 				]
@@ -490,7 +490,7 @@ module TypeScript {
 		public toObject() {
 			return {
 				FuncExpr: [
-					this.span.toObject(),
+					[this.span.toObject(), null],
 					(this.id) ? this.id.toObject() : null,
 					this.args.toObject(),
 					this.body.toObject()
@@ -508,7 +508,7 @@ module TypeScript {
 		public toObject() {
 			return {
 				VarRef: [
-					this.span.toObject(),
+					[this.span.toObject(), null],
 					this.id.toObject()
 				]
 			};
@@ -524,7 +524,7 @@ module TypeScript {
 		public toObject() {
 			return {
 				DotRef: [
-					this.span.toObject(),
+					[this.span.toObject(), null],
 					this.expression.toObject(),
 					this.id.toObject()
 				]
@@ -541,7 +541,7 @@ module TypeScript {
 		public toObject() {
 			return {
 				BracketRef: [
-					this.span.toObject(),
+					[this.span.toObject(), null],
 					this.e1.toObject(),
 					this.e2.toObject()
 				]
@@ -561,7 +561,7 @@ module TypeScript {
 		public toObject() {
 			return {
 				CallExpr: [
-					this.span.toObject(),
+					[this.span.toObject(), null],
 					this.target.toObject(),
 					this.args.toObject()
 				]
@@ -579,7 +579,7 @@ module TypeScript {
 		public toObject() {
 			return {
 				ObjectLit: [
-					this.span.toObject(),
+					[this.span.toObject(), null],
 					this.bindings.toObject()
 				]
 			};
@@ -596,7 +596,7 @@ module TypeScript {
 		public toObject() {
 			return {
 				AssignExpr: [
-					this.span.toObject(),
+					[this.span.toObject(), null],
 					this.assignOp.toObject(),
 					this.lval.toObject(),
 					this.expression.toObject()
@@ -613,7 +613,7 @@ module TypeScript {
 
 		public toObject() {
 			return {
-				ThisRef: this.span.toObject()
+				ThisRef: [this.span.toObject(), null]
 			};
 		}
 
@@ -627,7 +627,7 @@ module TypeScript {
 
 		public toObject() {
 			return {
-				NullLit: this.span.toObject()
+				NullLit: [this.span.toObject(), null]
 			};
 		}
 
@@ -642,7 +642,7 @@ module TypeScript {
 		public toObject() {
 			return {
 				BoolLit: [
-					this.span.toObject(),
+					[this.span.toObject(), null],
 					this.b
 				]
 			};
@@ -659,7 +659,7 @@ module TypeScript {
 		public toObject() {
 			return {
 				NewExpr: [
-					this.span.toObject(),
+					[this.span.toObject(), null],
 					this.e.toObject(),
 					this.es.toObject()
 				]
@@ -677,7 +677,7 @@ module TypeScript {
 		public toObject() {
 			return {
 				SuperExpr: [
-					this.span.toObject(),
+					[this.span.toObject(), null],
 					this.args.toObject()
 				]
 			};
@@ -694,7 +694,7 @@ module TypeScript {
 		public toObject() {
 			return {
 				UnaryAssignExpr: [
-					this.span.toObject(),
+					[this.span.toObject(), null],
 					this.op.toObject(),
 					this.lval.toObject()
 				]
@@ -712,7 +712,7 @@ module TypeScript {
 		public toObject() {
 			return {
 				PrefixExpr: [
-					this.span.toObject(),
+					[this.span.toObject(), null],
 					this.op.toObject(),
 					this.exp.toObject()
 				]
@@ -746,7 +746,7 @@ module TypeScript {
 		public toObject(): any {
 			return {
 				Constructor: [
-					this.span.toObject(),
+					[this.span.toObject(), (this.ann) ? this.ann : null],
 					(this.args) ? this.args.toObject() : null,
 					this.body.toObject()
 				]
@@ -763,7 +763,7 @@ module TypeScript {
 		public toObject(): any {
 			return {
 				MemberVarDecl: [
-					this.span.toObject(),
+					[this.span.toObject(), null],
 					this.mod,
 					this.sta,
 					this.vardecl.toObject()
@@ -781,7 +781,7 @@ module TypeScript {
 		public toObject(): any {
 			return {
 				MemberMethDecl: [
-					this.span.toObject(),
+					[this.span.toObject(), null],
 					this.mod,
 					this.sta,
 					this.name.toObject(),
@@ -821,7 +821,7 @@ module TypeScript {
 	export class NanoEmptyStmt extends NanoStatement {
 
 		public toObject(): any {
-			return { EmptyStmt: this.span.toObject() };
+			return { EmptyStmt: [this.span.toObject(), null] };
 		}
 
 		constructor(public span: NanoSourceSpan, public ann: string) {
@@ -836,7 +836,7 @@ module TypeScript {
 		public toObject(): any {
 			return {
 				ExprStmt: [
-					this.span.toObject(),
+					[this.span.toObject(), null],
 					this.exp.toObject()
 				]
 			};
@@ -852,7 +852,7 @@ module TypeScript {
 		public toObject(): any {
 			return {
 				VarDeclStmt: [
-					this.span.toObject(),
+					[this.span.toObject(), null],
 					this.varDecls.toObject()
 				]
 			};
@@ -868,7 +868,7 @@ module TypeScript {
 		public toObject() {
 			return {
 				FunctionStmt: [
-					this.span.toObject(),
+					[this.span.toObject(), (this.ann) ? this.ann : null],
 					this.id.toObject(),
 					this.args.toObject(),
 					this.body.toObject()
@@ -886,7 +886,7 @@ module TypeScript {
 		public toObject() {
 			return {
 				ReturnStmt: [
-					this.span.toObject(),
+					[this.span.toObject(), null],
 					(this.expression) ? this.expression.toObject() : null
 				]
 			};
@@ -902,7 +902,7 @@ module TypeScript {
 		public toObject() {
 			return {
 				BlockStmt: [
-					this.span.toObject(),
+					[this.span.toObject(), null],
 					this.body.toObject() 
 				]
 			};
@@ -918,7 +918,7 @@ module TypeScript {
 		public toObject() {
 			return {
 				ClassStmt: [
-					this.span.toObject(),
+					[this.span.toObject(), null],
 					this.id.toObject(),
 					(this.extendsClass) ? this.extendsClass.toObject() : null,
 					this.implementsInterfaces.toObject(),
@@ -941,7 +941,7 @@ module TypeScript {
 		public toObject() {
 			return {
 				WhileStmt: [
-					this.span.toObject(),
+					[this.span.toObject(), null],
 					this.exp.toObject(),
 					this.body.toObject()
 				]
@@ -958,7 +958,7 @@ module TypeScript {
 		public toObject() {
 			return {
 				ForStmt: [
-					this.span.toObject(),
+					[this.span.toObject(), null],
 					(this.init) ? this.init.toObject() : null,
 					(this.test) ? this.test.toObject() : null,
 					this.inc.toObject(),
@@ -978,7 +978,7 @@ module TypeScript {
 		public toObject() {
 			return {
 				IfStmt: [
-					this.span.toObject(),
+					[this.span.toObject(), null],
 					this.cond.toObject(),
 					this.s1.toObject(),
 					this.s2.toObject()
@@ -996,7 +996,7 @@ module TypeScript {
 		public toObject() {
 			return {
 				IfSingleStmt: [
-					this.span.toObject(),
+					[this.span.toObject(), null],
 					this.cond.toObject(),
 					this.s.toObject(),
 				]

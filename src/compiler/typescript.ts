@@ -629,10 +629,11 @@ module TypeScript {
             return emitter;
         }
 
-		//NanoJS - begin
+        //NanoJS - begin
         private emitJSON(document: Document,
-                     inputOutputMapper?: (inputName: string, outputName: string) => void ,
-                     emitter?: Emitter): Emitter {
+                inputOutputMapper?: (inputName: string, outputName: string) => void ,
+                emitter?: Emitter): Emitter 
+        {
 
             var script = document.script;
             if (!script.isDeclareFile) {
@@ -640,7 +641,7 @@ module TypeScript {
                 if (!emitter) {
                     var jsonFileName = this.emitOptions.mapOutputFileName(document, TypeScriptCompiler.mapToJSONFileName);
                     var jsonOutFile = this.createFile(jsonFileName, this.writeByteOrderMarkForDocument(document));
-					emitter = new Emitter(jsonFileName, jsonOutFile, this.emitOptions, this.semanticInfoChain);
+                    emitter = new Emitter(jsonFileName, jsonOutFile, this.emitOptions, this.semanticInfoChain);
 
                     if (inputOutputMapper) {
                         // Remember the name of the outfile for this source file
@@ -651,11 +652,12 @@ module TypeScript {
                 // Set location info
                 emitter.setDocument(document);
                 emitter.emitJSON(document, /*startLine:*/false);
+                console.log("Emitting AST in JSON in: " + jsonFileName);
             }
 
             return emitter;
         }
-		//NanoJS - end
+        //NanoJS - end
 
 
         // Will not throw exceptions.
