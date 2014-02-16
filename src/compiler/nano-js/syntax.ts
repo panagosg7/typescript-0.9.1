@@ -1,17 +1,18 @@
 
-///<reference path='typescript.ts' />
+///<reference path='..\typescript.ts' />
 
 module TypeScript {
 
-	export interface INanoAST {
-		toObject(): any;		
-	}
+	export class NanoAST {
 
-	export function nanoStringify(ast: NanoAST): string {
-		return JSON.stringify(ast.toObject(), undefined, 2);
-	}
+		public annotations: NanoAnnotation[];
 
-	export class NanoAST implements INanoAST {
+		public addAnnotations(as: NanoAnnotation[]) {
+			if (!this.annotations) {
+				this.annotations = [];
+			}
+			this.annotations = this.annotations.concat(as);
+		}
 
 		public toObject(): any {
 			throw new Error("NanoAST: child class should implement toObject");
@@ -57,13 +58,13 @@ module TypeScript {
 
 	export class NanoId extends NanoAST {
 
-		constructor(public span: NanoSourceSpan, public ann: string, public id: string) {
+		constructor(public span: NanoSourceSpan, public ann: NanoAnnotation[], public id: string) {
 			super();
 		}
 
 		public toObject(): any {
 			return [
-				[this.span.toObject(), null],
+				[this.span.toObject(), this.ann.map(a => a.toObject())],
 				this.id
 			];
 		}
@@ -74,13 +75,13 @@ module TypeScript {
 
 		public toObject(): any {
 			return [
-				[this.span.toObject(), null],
+				[this.span.toObject(), this.ann.map(a => a.toObject())],
 				this.x.toObject(),
 				(this.exp) ? this.exp.toObject() : null
 			];
 		}
 
-		constructor(public span: NanoSourceSpan, public ann: string, public x: NanoId, public exp?: NanoExpression) {
+		constructor(public span: NanoSourceSpan, public ann: NanoAnnotation[], public x: NanoId, public exp?: NanoExpression) {
 			super();
 		}
 	}
@@ -90,13 +91,13 @@ module TypeScript {
 		public toObject(): any {
 			return {
 				PropId: [
-					[this.span.toObject(), null],
+					[this.span.toObject(), this.ann.map(a => a.toObject())],
 					this.f.toObject()
 				]
 			};
 		}
 
-		constructor(public span: NanoSourceSpan, public ann: string, public f: NanoId) {
+		constructor(public span: NanoSourceSpan, public ann: NanoAnnotation[], public f: NanoId) {
 			super();
 		}
 	}
@@ -106,13 +107,13 @@ module TypeScript {
 		public toObject(): any {
 			return {
 				PropString: [
-					[this.span.toObject(), null],
+					[this.span.toObject(), this.ann.map(a => a.toObject())],
 					this.s
 				]
 			};
 		}
 
-		constructor(public span: NanoSourceSpan, public ann: string, public s: string) {
+		constructor(public span: NanoSourceSpan, public ann: NanoAnnotation[], public s: string) {
 			super();
 		}
 	}
@@ -122,13 +123,13 @@ module TypeScript {
 		public toObject(): any {
 			return {
 				PropNum: [
-					[this.span.toObject(), null],
+					[this.span.toObject(), this.ann.map(a => a.toObject())],
 					this.n
 				]
 			};
 		}
 
-		constructor(public span: NanoSourceSpan, public ann: string, public n: number) {
+		constructor(public span: NanoSourceSpan, public ann: NanoAnnotation[], public n: number) {
 			super();
 		}
 	}
@@ -145,10 +146,10 @@ module TypeScript {
 	export class NanoNoInit extends NanoForInit {
 
 		public toObject(): any {
-			return { NoInit: [this.span.toObject(), null] };
+			return { NoInit: [this.span.toObject(), this.ann.map(a => a.toObject())] };
 		}
 
-		constructor(public span: NanoSourceSpan, public ann: string) {
+		constructor(public span: NanoSourceSpan, public ann: NanoAnnotation[]) {
 			super();
 		}
 
@@ -160,7 +161,7 @@ module TypeScript {
 			return { VarInit: this.vds.toObject() };
 		}
 
-		constructor(public span: NanoSourceSpan, public ann: string, public vds: NanoASTList<NanoVarDecl>) {
+		constructor(public span: NanoSourceSpan, public ann: NanoAnnotation[], public vds: NanoASTList<NanoVarDecl>) {
 			super();
 		}
 
@@ -171,13 +172,13 @@ module TypeScript {
 		public toObject(): any {
 			return {
 				ExprInit: [
-					[this.span.toObject(), null],
+					[this.span.toObject(), this.ann.map(a => a.toObject())],
 					this.exp.toObject()
 				]
 			};
 		}
 
-		constructor(public span: NanoSourceSpan, public ann: string, public exp: NanoExpression) {
+		constructor(public span: NanoSourceSpan, public ann: NanoAnnotation[], public exp: NanoExpression) {
 			super();
 		}
 
@@ -351,13 +352,13 @@ module TypeScript {
 		public toObject(): any {
 			return {
 				LVar: [
-					[this.span.toObject(), null],
+					[this.span.toObject(), this.ann.map(a => a.toObject())],
 					this.s
 				]
 			};
 		}
 
-		constructor(public span: NanoSourceSpan, public ann: string, public s: string) {
+		constructor(public span: NanoSourceSpan, public ann: NanoAnnotation[], public s: string) {
 			super();
 		}
 	}
@@ -368,14 +369,14 @@ module TypeScript {
 		public toObject(): any {
 			return {
 				LDot: [
-					[this.span.toObject(), null],
+					[this.span.toObject(), this.ann.map(a => a.toObject())],
 					this.exp.toObject(),
 					this.str
 				]
 			};
 		}
 
-		constructor(public span: NanoSourceSpan, public ann: string, public exp: NanoExpression, public str: string) {
+		constructor(public span: NanoSourceSpan, public ann: NanoAnnotation[], public exp: NanoExpression, public str: string) {
 			super();
 		}
 	}
@@ -386,14 +387,14 @@ module TypeScript {
 		public toObject(): any {
 			return {
 				LBracket: [
-					[this.span.toObject(), null],
+					[this.span.toObject(), this.ann.map(a => a.toObject())],
 					this.e1.toObject(),
 					this.e1.toObject()
 				]
 			};
 		}
 
-		constructor(public span: NanoSourceSpan, public ann: string, public e1: NanoExpression, public e2: NanoExpression) {
+		constructor(public span: NanoSourceSpan, public ann: NanoAnnotation[], public e1: NanoExpression, public e2: NanoExpression) {
 			super();
 		}
 	}
@@ -415,7 +416,7 @@ module TypeScript {
 		public toObject() {
 			return {
 				InfixExpr: [
-					[this.span.toObject(), null],
+					[this.span.toObject(), this.ann.map(a => a.toObject())],
 					this.op.toObject(),
 					this.operand1.toObject(),
 					this.operand2.toObject()
@@ -423,7 +424,7 @@ module TypeScript {
 			};
 		}
 
-		constructor(public span: NanoSourceSpan, public ann: string, public op: NanoInfixOp, public operand1: NanoExpression, public operand2: NanoExpression) {
+		constructor(public span: NanoSourceSpan, public ann: NanoAnnotation[], public op: NanoInfixOp, public operand1: NanoExpression, public operand2: NanoExpression) {
 			super();
 		}
 
@@ -434,13 +435,13 @@ module TypeScript {
 		public toObject() {
 			return {
 				NumLit: [
-					[this.span.toObject(), null],
+					[this.span.toObject(), this.ann.map(a => a.toObject())],
 					this.num
 				]
 			};
 		}
 
-		constructor(public span: NanoSourceSpan, public ann: string, public num: number) {
+		constructor(public span: NanoSourceSpan, public ann: NanoAnnotation[], public num: number) {
 			super();
 		}
 
@@ -451,13 +452,13 @@ module TypeScript {
 		public toObject() {
 			return {
 				IntLit: [
-					[this.span.toObject(), null],
+					[this.span.toObject(), this.ann.map(a => a.toObject())],
 					this.num
 				]
 			};
 		}
 
-		constructor(public span: NanoSourceSpan, public ann: string, public num: number) {
+		constructor(public span: NanoSourceSpan, public ann: NanoAnnotation[], public num: number) {
 			super();
 		}
 
@@ -470,14 +471,14 @@ module TypeScript {
 		public toObject() {
 			return {
 				StringLit: [
-					[this.span.toObject(), null],
+					[this.span.toObject(), this.ann.map(a => a.toObject())],
 					//TODO: strings appear with '\"' in beginning and end
 					this.str.toString()
 				]
 			};
 		}
 
-		constructor(public span: NanoSourceSpan, public ann: string, public str: string) {
+		constructor(public span: NanoSourceSpan, public ann: NanoAnnotation[], public str: string) {
 			super();
 		}
 
@@ -490,7 +491,7 @@ module TypeScript {
 		public toObject() {
 			return {
 				FuncExpr: [
-					[this.span.toObject(), null],
+					[this.span.toObject(), this.ann.map(a => a.toObject())],
 					(this.id) ? this.id.toObject() : null,
 					this.args.toObject(),
 					this.body.toObject()
@@ -498,7 +499,7 @@ module TypeScript {
 			};
 		}
 		
-		constructor(public span: NanoSourceSpan, public ann: string, public id: NanoId, public args: NanoASTList<NanoId>, public body: NanoASTList<NanoStatement>) {
+		constructor(public span: NanoSourceSpan, public ann: NanoAnnotation[], public id: NanoId, public args: NanoASTList<NanoId>, public body: NanoASTList<NanoStatement>) {
 			super();
 		}
 	}
@@ -508,13 +509,13 @@ module TypeScript {
 		public toObject() {
 			return {
 				VarRef: [
-					[this.span.toObject(), null],
+					[this.span.toObject(), this.ann.map(a => a.toObject())],
 					this.id.toObject()
 				]
 			};
 		}
 		
-		constructor(public span: NanoSourceSpan, public ann: string, public id: NanoId) {
+		constructor(public span: NanoSourceSpan, public ann: NanoAnnotation[], public id: NanoId) {
 			super();
 		}
 	}
@@ -524,14 +525,14 @@ module TypeScript {
 		public toObject() {
 			return {
 				DotRef: [
-					[this.span.toObject(), null],
+					[this.span.toObject(), this.ann.map(a => a.toObject())],
 					this.expression.toObject(),
 					this.id.toObject()
 				]
 			};
 		}
 		
-		constructor(public span: NanoSourceSpan, public ann: string, public expression: NanoExpression, public id: NanoId) {
+		constructor(public span: NanoSourceSpan, public ann: NanoAnnotation[], public expression: NanoExpression, public id: NanoId) {
 			super();
 		}
 	}
@@ -541,14 +542,14 @@ module TypeScript {
 		public toObject() {
 			return {
 				BracketRef: [
-					[this.span.toObject(), null],
+					[this.span.toObject(), this.ann.map(a => a.toObject())],
 					this.e1.toObject(),
 					this.e2.toObject()
 				]
 			};
 		}
 		
-		constructor(public span: NanoSourceSpan, public ann: string, public e1: NanoExpression, public e2: NanoExpression) {
+		constructor(public span: NanoSourceSpan, public ann: NanoAnnotation[], public e1: NanoExpression, public e2: NanoExpression) {
 			super();
 		}
 	}
@@ -561,14 +562,14 @@ module TypeScript {
 		public toObject() {
 			return {
 				CallExpr: [
-					[this.span.toObject(), null],
+					[this.span.toObject(), this.ann.map(a => a.toObject())],
 					this.target.toObject(),
 					this.args.toObject()
 				]
 			};
 		}
 		
-		constructor(public span: NanoSourceSpan, public ann: string, public target: NanoExpression, public args: NanoASTList<NanoExpression>) {
+		constructor(public span: NanoSourceSpan, public ann: NanoAnnotation[], public target: NanoExpression, public args: NanoASTList<NanoExpression>) {
 			super();
 		}
 	}
@@ -579,13 +580,13 @@ module TypeScript {
 		public toObject() {
 			return {
 				ObjectLit: [
-					[this.span.toObject(), null],
+					[this.span.toObject(), this.ann.map(a => a.toObject())],
 					this.bindings.toObject()
 				]
 			};
 		}
 		
-		constructor(public span: NanoSourceSpan, public ann: string, public bindings: NanoASTList<INanoAST>) {
+		constructor(public span: NanoSourceSpan, public ann: NanoAnnotation[], public bindings: NanoASTList<NanoAST>) {
 			super();
 		}
 	}
@@ -596,7 +597,7 @@ module TypeScript {
 		public toObject() {
 			return {
 				AssignExpr: [
-					[this.span.toObject(), null],
+					[this.span.toObject(), this.ann.map(a => a.toObject())],
 					this.assignOp.toObject(),
 					this.lval.toObject(),
 					this.expression.toObject()
@@ -604,7 +605,7 @@ module TypeScript {
 			};
 		}
 		
-		constructor(public span: NanoSourceSpan, public ann: string, public assignOp: NanoAssignOp, public lval: NanoLValue, public expression: NanoExpression) {
+		constructor(public span: NanoSourceSpan, public ann: NanoAnnotation[], public assignOp: NanoAssignOp, public lval: NanoLValue, public expression: NanoExpression) {
 			super();
 		}
 	}
@@ -613,11 +614,11 @@ module TypeScript {
 
 		public toObject() {
 			return {
-				ThisRef: [this.span.toObject(), null]
+				ThisRef: [this.span.toObject(), this.ann.map(a => a.toObject())]
 			};
 		}
 
-		constructor(public span: NanoSourceSpan, public ann: string) {
+		constructor(public span: NanoSourceSpan, public ann: NanoAnnotation[]) {
 			super();
 		}
 		
@@ -627,11 +628,11 @@ module TypeScript {
 
 		public toObject() {
 			return {
-				NullLit: [this.span.toObject(), null]
+				NullLit: [this.span.toObject(), this.ann.map(a => a.toObject())]
 			};
 		}
 
-		constructor(public span: NanoSourceSpan, public ann: string) {
+		constructor(public span: NanoSourceSpan, public ann: NanoAnnotation[]) {
 			super();
 		}
 		
@@ -642,13 +643,13 @@ module TypeScript {
 		public toObject() {
 			return {
 				BoolLit: [
-					[this.span.toObject(), null],
+					[this.span.toObject(), this.ann.map(a => a.toObject())],
 					this.b
 				]
 			};
 		}
 
-		constructor(public span: NanoSourceSpan, public ann: string, public b: boolean) {
+		constructor(public span: NanoSourceSpan, public ann: NanoAnnotation[], public b: boolean) {
 			super();
 		}
 
@@ -659,14 +660,14 @@ module TypeScript {
 		public toObject() {
 			return {
 				NewExpr: [
-					[this.span.toObject(), null],
+					[this.span.toObject(), this.ann.map(a => a.toObject())],
 					this.e.toObject(),
 					this.es.toObject()
 				]
 			};
 		}
 
-		constructor(public span: NanoSourceSpan, public ann: string, public e: NanoExpression, public es: NanoASTList<NanoExpression>) {
+		constructor(public span: NanoSourceSpan, public ann: NanoAnnotation[], public e: NanoExpression, public es: NanoASTList<NanoExpression>) {
 			super();
 		}
 
@@ -677,13 +678,13 @@ module TypeScript {
 		public toObject() {
 			return {
 				SuperExpr: [
-					[this.span.toObject(), null],
+					[this.span.toObject(), this.ann.map(a => a.toObject())],
 					this.args.toObject()
 				]
 			};
 		}
 
-		constructor(public span: NanoSourceSpan, public ann: string, public args: NanoASTList<NanoExpression>) {
+		constructor(public span: NanoSourceSpan, public ann: NanoAnnotation[], public args: NanoASTList<NanoExpression>) {
 			super();
 		}
 
@@ -694,14 +695,14 @@ module TypeScript {
 		public toObject() {
 			return {
 				UnaryAssignExpr: [
-					[this.span.toObject(), null],
+					[this.span.toObject(), this.ann.map(a => a.toObject())],
 					this.op.toObject(),
 					this.lval.toObject()
 				]
 			};
 		}
 
-		constructor(public span: NanoSourceSpan, public ann: string, public op: NanoUnaryAssignOp, public lval: NanoLValue) {
+		constructor(public span: NanoSourceSpan, public ann: NanoAnnotation[], public op: NanoUnaryAssignOp, public lval: NanoLValue) {
 			super();
 		}
 
@@ -712,14 +713,14 @@ module TypeScript {
 		public toObject() {
 			return {
 				PrefixExpr: [
-					[this.span.toObject(), null],
+					[this.span.toObject(), this.ann.map(a => a.toObject())],
 					this.op.toObject(),
 					this.exp.toObject()
 				]
 			};
 		}
 		
-		constructor(public span: NanoSourceSpan, public ann: string, public op: NanoPrefixOp, public exp: NanoExpression) {
+		constructor(public span: NanoSourceSpan, public ann: NanoAnnotation[], public op: NanoPrefixOp, public exp: NanoExpression) {
 			super();
 		}
 
@@ -746,14 +747,14 @@ module TypeScript {
 		public toObject(): any {
 			return {
 				Constructor: [
-					[this.span.toObject(), (this.ann) ? this.ann : null],
+					[this.span.toObject(), this.ann.map(a => a.toObject())],
 					(this.args) ? this.args.toObject() : null,
 					this.body.toObject()
 				]
 			};
 		}
 
-		constructor(public span: NanoSourceSpan, public ann: string, public /*Maybe*/ args: NanoASTList<NanoId>, public body: NanoASTList<NanoStatement>) {
+		constructor(public span: NanoSourceSpan, public ann: NanoAnnotation[], public /*Maybe*/ args: NanoASTList<NanoId>, public body: NanoASTList<NanoStatement>) {
 			super();
 		}
 	}
@@ -763,7 +764,7 @@ module TypeScript {
 		public toObject(): any {
 			return {
 				MemberVarDecl: [
-					[this.span.toObject(), null],
+					[this.span.toObject(), this.ann.map(a => a.toObject())],
 					this.mod,
 					this.sta,
 					this.vardecl.toObject()
@@ -771,7 +772,7 @@ module TypeScript {
 			};
 		}
 
-		constructor(public span: NanoSourceSpan, public ann: string, public mod: boolean, public sta: boolean, public vardecl: NanoVarDecl) {
+		constructor(public span: NanoSourceSpan, public ann: NanoAnnotation[], public mod: boolean, public sta: boolean, public vardecl: NanoVarDecl) {
 			super();
 		}
 	}
@@ -781,7 +782,7 @@ module TypeScript {
 		public toObject(): any {
 			return {
 				MemberMethDecl: [
-					[this.span.toObject(), null],
+					[this.span.toObject(), this.ann.map(a => a.toObject())],
 					this.mod,
 					this.sta,
 					this.name.toObject(),
@@ -791,7 +792,7 @@ module TypeScript {
 			};
 		}
 
-		constructor(public span: NanoSourceSpan, public ann: string, public mod: boolean,
+		constructor(public span: NanoSourceSpan, public ann: NanoAnnotation[], public mod: boolean,
 			public sta: boolean,
 			public name: NanoId,
 			public args: NanoASTList<NanoId>,
@@ -821,10 +822,10 @@ module TypeScript {
 	export class NanoEmptyStmt extends NanoStatement {
 
 		public toObject(): any {
-			return { EmptyStmt: [this.span.toObject(), null] };
+			return { EmptyStmt: [this.span.toObject(), this.ann.map(a => a.toObject())] };
 		}
 
-		constructor(public span: NanoSourceSpan, public ann: string) {
+		constructor(public span: NanoSourceSpan, public ann: NanoAnnotation[]) {
 			super();
 		}
 	}
@@ -836,13 +837,13 @@ module TypeScript {
 		public toObject(): any {
 			return {
 				ExprStmt: [
-					[this.span.toObject(), null],
+					[this.span.toObject(), this.ann.map(a => a.toObject())],
 					this.exp.toObject()
 				]
 			};
 		}
 
-		constructor(public span: NanoSourceSpan, public ann: string, public exp: NanoExpression) {
+		constructor(public span: NanoSourceSpan, public ann: NanoAnnotation[], public exp: NanoExpression) {
 			super();
 		}
 	}
@@ -852,13 +853,13 @@ module TypeScript {
 		public toObject(): any {
 			return {
 				VarDeclStmt: [
-					[this.span.toObject(), null],
+					[this.span.toObject(), this.ann.map(a => a.toObject())],
 					this.varDecls.toObject()
 				]
 			};
 		}
 
-		constructor(public span: NanoSourceSpan, public ann: string, public varDecls: NanoASTList<NanoVarDecl>) {
+		constructor(public span: NanoSourceSpan, public ann: NanoAnnotation[], public varDecls: NanoASTList<NanoVarDecl>) {
 			super();
 		}
 	}
@@ -868,7 +869,7 @@ module TypeScript {
 		public toObject() {
 			return {
 				FunctionStmt: [
-					[this.span.toObject(), (this.ann) ? this.ann : null],
+					[this.span.toObject(), this.ann.map(a => a.toObject())],
 					this.id.toObject(),
 					this.args.toObject(),
 					this.body.toObject()
@@ -876,7 +877,7 @@ module TypeScript {
 			};
 		}
 		
-		constructor(public span: NanoSourceSpan, public ann: string, public id: NanoId, public args: NanoASTList<NanoId>, public body: NanoASTList<NanoStatement>) {
+		constructor(public span: NanoSourceSpan, public ann: NanoAnnotation[], public id: NanoId, public args: NanoASTList<NanoId>, public body: NanoASTList<NanoStatement>) {
 			super();
 		}
 	}
@@ -886,13 +887,13 @@ module TypeScript {
 		public toObject() {
 			return {
 				ReturnStmt: [
-					[this.span.toObject(), null],
+					[this.span.toObject(), this.ann.map(a => a.toObject())],
 					(this.expression) ? this.expression.toObject() : null
 				]
 			};
 		}
 		
-		constructor(public span: NanoSourceSpan, public ann: string, public expression: NanoExpression) {
+		constructor(public span: NanoSourceSpan, public ann: NanoAnnotation[], public expression: NanoExpression) {
 			super();
 		}
 	}
@@ -902,13 +903,13 @@ module TypeScript {
 		public toObject() {
 			return {
 				BlockStmt: [
-					[this.span.toObject(), null],
+					[this.span.toObject(), this.ann.map(a => a.toObject())],
 					this.body.toObject() 
 				]
 			};
 		}
 		
-		constructor(public span: NanoSourceSpan, public ann: string, public body: NanoASTList<NanoStatement>) {
+		constructor(public span: NanoSourceSpan, public ann: NanoAnnotation[], public body: NanoASTList<NanoStatement>) {
 			super();
 		}
 	}
@@ -918,7 +919,7 @@ module TypeScript {
 		public toObject() {
 			return {
 				ClassStmt: [
-					[this.span.toObject(), null],
+					[this.span.toObject(), this.ann.map(a => a.toObject())],
 					this.id.toObject(),
 					(this.extendsClass) ? this.extendsClass.toObject() : null,
 					this.implementsInterfaces.toObject(),
@@ -927,7 +928,7 @@ module TypeScript {
 			};
 		}
 		
-		constructor(public span: NanoSourceSpan, public ann: string, 
+		constructor(public span: NanoSourceSpan, public ann: NanoAnnotation[], 
 			public id: NanoId,
 			public extendsClass/* Maybe */: NanoId,
 			public implementsInterfaces: NanoASTList<NanoId>,
@@ -941,14 +942,14 @@ module TypeScript {
 		public toObject() {
 			return {
 				WhileStmt: [
-					[this.span.toObject(), null],
+					[this.span.toObject(), this.ann.map(a => a.toObject())],
 					this.exp.toObject(),
 					this.body.toObject()
 				]
 			};
 		}
 
-		constructor(public span: NanoSourceSpan, public ann: string, public exp: NanoExpression, public body: NanoStatement) {
+		constructor(public span: NanoSourceSpan, public ann: NanoAnnotation[], public exp: NanoExpression, public body: NanoStatement) {
 			super();
 		}
 	}
@@ -958,7 +959,7 @@ module TypeScript {
 		public toObject() {
 			return {
 				ForStmt: [
-					[this.span.toObject(), null],
+					[this.span.toObject(), this.ann.map(a => a.toObject())],
 					(this.init) ? this.init.toObject() : null,
 					(this.test) ? this.test.toObject() : null,
 					this.inc.toObject(),
@@ -967,7 +968,7 @@ module TypeScript {
 			};
 		}
 
-		constructor(public span: NanoSourceSpan, public ann: string, public init: NanoForInit, /*Maybe*/ public test: NanoExpression,
+		constructor(public span: NanoSourceSpan, public ann: NanoAnnotation[], public init: NanoForInit, /*Maybe*/ public test: NanoExpression,
 			/*Maybe*/ public inc: NanoExpression, public body: NanoStatement) {
 			super();
 		}
@@ -978,7 +979,7 @@ module TypeScript {
 		public toObject() {
 			return {
 				IfStmt: [
-					[this.span.toObject(), null],
+					[this.span.toObject(), this.ann.map(a => a.toObject())],
 					this.cond.toObject(),
 					this.s1.toObject(),
 					this.s2.toObject()
@@ -986,7 +987,7 @@ module TypeScript {
 			};
 		}
 
-		constructor(public span: NanoSourceSpan, public ann: string, public cond: NanoExpression, public s1: NanoStatement, public s2: NanoStatement) {
+		constructor(public span: NanoSourceSpan, public ann: NanoAnnotation[], public cond: NanoExpression, public s1: NanoStatement, public s2: NanoStatement) {
 			super();
 		}
 	}
@@ -996,14 +997,14 @@ module TypeScript {
 		public toObject() {
 			return {
 				IfSingleStmt: [
-					[this.span.toObject(), null],
+					[this.span.toObject(), this.ann.map(a => a.toObject())],
 					this.cond.toObject(),
 					this.s.toObject(),
 				]
 			};
 		}
 
-		constructor(public span: NanoSourceSpan, public ann: string, public cond: NanoExpression, public s: NanoStatement) {
+		constructor(public span: NanoSourceSpan, public ann: NanoAnnotation[], public cond: NanoExpression, public s: NanoStatement) {
 			super();
 		}
 	}

@@ -988,7 +988,7 @@ module TypeScript {
 		//NanoJS begin
 		public toTFunctionSigMember(): TFunctionSigMember {
 			var tParams = this.getTypeParameters().map(p => p.type.toNJSTypeParameter());
-			var tArgs = this.parameters.map(p => new BoundedNJSType(p.name, p.type.toNJSType()));
+			var tArgs = this.parameters.map(p => new BoundedNanoType(p.name, p.type.toNJSType()));
 			var retT = this.returnType.toNJSType();
 			return new TFunctionSigMember(tParams, tArgs, retT);
 		}
@@ -1996,7 +1996,7 @@ module TypeScript {
 		//TS to Nano - begin
 
 		/** toNJSType: Convert a PullTypeSymbol to a NanoJS type */
-		public toNJSType(): NJSType {
+		public toNJSType(): NanoType {
 
 			if (this.toString() === "any") {
 				return TAny;

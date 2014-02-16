@@ -3,13 +3,13 @@
 
 module TypeScript {
 
-	export interface NJSType {
+	export interface NanoType {
 		toString(): string;
 	}
 
-	export class BoundedNJSType {
+	export class BoundedNanoType {
 
-		constructor(private symbol: string, private type: NJSType) { }
+		constructor(private symbol: string, private type: NanoType) { }
 
 		public toString() {
 			return this.symbol + ": " + this.type.toString();
@@ -17,7 +17,7 @@ module TypeScript {
 
 	}
 
-	export class TError implements NJSType {
+	export class TError implements NanoType {
 		constructor(private msg: string) { }
 
 		public toString(): string {
@@ -26,7 +26,7 @@ module TypeScript {
 
 	}
 
-	export class TAnyC implements NJSType {
+	export class TAnyC implements NanoType {
 
 		public toString(): string {
 			return "top";
@@ -36,7 +36,7 @@ module TypeScript {
 
 	export var TAny = new TAnyC();
 
-	export class TNumberC implements NJSType {
+	export class TNumberC implements NanoType {
 
 		public toString(): string {
 			return "number";
@@ -46,7 +46,7 @@ module TypeScript {
 
 	export var TNumber = new TNumberC();
 
-	export class TStringC implements NJSType {
+	export class TStringC implements NanoType {
 
 		public toString(): string {
 			return "string";
@@ -56,7 +56,7 @@ module TypeScript {
 
 	export var TString = new TStringC();
 
-	export class TBooleanC implements NJSType {
+	export class TBooleanC implements NanoType {
 
 		public toString(): string {
 			return "boolean";
@@ -66,7 +66,7 @@ module TypeScript {
 
 	export var TBoolean = new TBooleanC();
 
-	export class TVoidC implements NJSType {
+	export class TVoidC implements NanoType {
 
 		public toString(): string {
 			return "void";
@@ -79,11 +79,11 @@ module TypeScript {
 
 
 	export class TField {
-		constructor(public symbol: string, public type: NJSType) { }
+		constructor(public symbol: string, public type: NanoType) { }
 	}
 
 
-	export class TObject implements NJSType {
+	export class TObject implements NanoType {
 
 		constructor(public fields: TField[]) { }
 
@@ -99,7 +99,7 @@ module TypeScript {
 
 	export class TFunctionSigMember {
 
-		constructor(private tParams: TTypeParam[], private argTs: BoundedNJSType[], private returnT: NJSType) { }
+		constructor(private tParams: TTypeParam[], private argTs: BoundedNanoType[], private returnT: NanoType) { }
 
 		public toString(): string {
 			var s = "";
@@ -115,7 +115,7 @@ module TypeScript {
 
 	}
 
-	export class TFunctionSig implements NJSType {
+	export class TFunctionSig implements NanoType {
 
 		constructor(private signatures: TFunctionSigMember[]) { }
 
@@ -133,9 +133,9 @@ module TypeScript {
 
 	}
 
-	export class TArray implements NJSType {
+	export class TArray implements NanoType {
 
-		constructor(private eltT: NJSType) { }
+		constructor(private eltT: NanoType) { }
 
 		public toString(): string {
 			return "[ " + this.eltT.toString() + " ]";
@@ -143,7 +143,7 @@ module TypeScript {
 
 	}
 
-	export class TTypeReference implements NJSType {
+	export class TTypeReference implements NanoType {
 
 		constructor(private name: string, private params: TTypeParam[]) { }
 
@@ -158,7 +158,7 @@ module TypeScript {
 
 	}
 
-	export class TInterface implements NJSType {
+	export class TInterface implements NanoType {
 
 		constructor(private ref: TTypeReference, private type: TObject) { }
 

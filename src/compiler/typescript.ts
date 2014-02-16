@@ -47,8 +47,9 @@
 ///<reference path='typecheck\pullSymbolBinder.ts' />
 ///<reference path='typecheck\semanticDiagnostic.ts' />
 ///<reference path='typecheck\pullHelpers.ts' />
-///<reference path='typecheck\translate.ts' />
-///<reference path='nanoAST.ts' />
+///<reference path='nano-js\annot.ts' />
+///<reference path='nano-js\syntax.ts' />
+///<reference path='nano-js\types.ts' />
 ///<reference path='syntaxTreeToAstVisitor.ts' />
 
 module TypeScript {
@@ -582,10 +583,11 @@ module TypeScript {
             return TypeScriptCompiler.mapToFileNameExtension(".js", fileName, wholeFileNameReplaced);
         }
 
-		//NanoJS
+		//NanoJS - begin
         static mapToJSONFileName(fileName: string, wholeFileNameReplaced: boolean) {
             return TypeScriptCompiler.mapToFileNameExtension(".json", fileName, wholeFileNameReplaced);
         }
+		//NanoJS - end
 
 
 
@@ -636,6 +638,7 @@ module TypeScript {
         {
 
             var script = document.script;
+
             if (!script.isDeclareFile) {
                 var typeScriptFileName = document.fileName;
                 if (!emitter) {
