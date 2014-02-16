@@ -16,21 +16,18 @@ module TypeScript {
 	}
 
 	export enum AnnotKind {
-		//AST local
-		Spec,
-		//Global annots
-		Meas,
-		Bind,
-		Extern,
-		Type,
-		TAlias,
-		PAlias,
-		Qual,
-		Invt
+		Meas,     // Measure
+  	Bind,     // Function / variable binder
+		Extern,   // External declaration
+		Type,     // Data type definition
+		TAlias,   // Type alias
+		PAlias,   // Predicate alias
+		Qual,     // Qualifier
+		Invt      // Invariant
 	}
 
 	export function annoKindIsGlob(ak: AnnotKind) {
-		return ak !== AnnotKind.Spec;
+		return ak !== AnnotKind.Bind;
 	}
 
 	export class NanoAnnotation {
@@ -38,7 +35,9 @@ module TypeScript {
 		private _tag: AnnotKind;
 		private _content: string;
 
-		/** Returns true if this is a global annotation (can float to top-level) */
+		/** Returns true if this is a global annotation (can float to top-level). 
+        Compared to function / variable binders that need to be local to 
+        particular AST nodes. */
 		public isGlob(): boolean {
 			return annoKindIsGlob(this._tag);
 		}
@@ -63,7 +62,7 @@ module TypeScript {
 					return new Pair(NanoAnnotation.toSpecKind(tokens[0]), tokens.slice(1).join(" "));
 				}
 				else {
-					return new Pair(AnnotKind.Spec, tokens.join(" "));
+					return new Pair(AnnotKind.Bind, tokens.join(" "));
 				}
 			}
 			throw new Error("NanoAnnotation could not parse string tag: " + s);
@@ -83,18 +82,9 @@ module TypeScript {
 				case "predicate": return AnnotKind.PAlias;
 				case "invariant": return AnnotKind.Invt;
 				case "extern": return AnnotKind.Extern;
-				default: return AnnotKind.Spec;
+				default: return AnnotKind.Bind;
 			}
 		}
 	}
-
-	//export class NanoAMeas extends NanoAnnotation {	}
-	//export class NanoABind extends NanoAnnotation { }
-	//export class NanoAExtern extends NanoAnnotation { }
-	//export class NanoAType extends NanoAnnotation { }
-	//export class NanoATAlias extends NanoAnnotation { }
-	//export class NanoAPAlias extends NanoAnnotation { }
-	//export class NanoAQual extends NanoAnnotation { }
-	//export class NanoAInvt extends NanoAnnotation { }
 
 }
