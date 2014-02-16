@@ -256,6 +256,7 @@ module TypeScript {
 			process.exit(1);
 		}
 
+    /** Returns annotations of the current AST node */
 		public getNanoAnnotations(): NanoAnnotation[] {
 			var annStrings: string[] = [];
 			var pre = this.preComments();
@@ -273,7 +274,7 @@ module TypeScript {
 			return annStrings.map(s => new NanoAnnotation(s));
 		}
 
-		/** Find all annotations enclosed in the AST node @ast@. */
+    /** Returns all annotations of the AST rooted at the current node */
 		public getAllAnnotations(): NanoAnnotation[] {
 			var annots: NanoAnnotation[] = [];
 			TypeScript.getAstWalkerFactory().walk(this, function (cur: AST, parent: AST, walker: IAstWalker) {
@@ -987,6 +988,10 @@ module TypeScript {
 
 		//NanoJS - begin
 		public toNanoExp(): NanoExpression {
+
+      //console.log("NumberLiteral: " + this.getNanoAnnotations().map(a =>
+      //      JSON.stringify(a.toObject())));
+
 			if (this.text().indexOf(".") === -1) {
 			//No decimal part
 				return new NanoIntLit(this.getSourceSpan(), this.getNanoAnnotations(), this.value);
@@ -1186,7 +1191,9 @@ module TypeScript {
 		//NanoJS - begin
 		public toNanoAST(): NanoVarDecl {
 			// data VarDecl a = VarDecl a (Id a) (Maybe (Expression a))
-			return new NanoVarDecl(this.getSourceSpan(), this.getNanoAnnotations(), this.id.toNanoAST(), (this.init) ? this.init.toNanoExp() : null);
+      //console.log("VariableDeclarator: " + this.getNanoAnnotations().map(a =>
+      //      JSON.stringify(a.toObject())));
+			return new NanoVarDecl(this.getSourceSpan(), [], this.id.toNanoAST(), (this.init) ? this.init.toNanoExp() : null);
 		}
 
 		public toNanoClassElt(): NanoClassElt {
@@ -1673,6 +1680,8 @@ module TypeScript {
 
 		//NanoJS - begin
 		public toNanoStmt(): NanoExprStmt {
+      //console.log("ExprStmt: " + this.getNanoAnnotations().map(a =>
+      //      JSON.stringify(a.toObject())));
 			return new NanoExprStmt(this.getSourceSpan(), this.getNanoAnnotations(), this.expression.toNanoExp());
 		}
 		//NanoJS - end
@@ -1736,7 +1745,18 @@ module TypeScript {
 		}
 		
 		public toNanoStmt(): NanoVarDeclStmt {
-			return new NanoVarDeclStmt(this.getSourceSpan(), this.getNanoAnnotations(), <NanoASTList<NanoVarDecl>>this.declarators.toNanoAST());
+      //console.log("VariableDeclaration: " + this.getNanoAnnotations().map(a =>
+      //      JSON.stringify(a.toObject())));
+          
+//TODO !!!! 
+// Get all annotations in the leafs of this node and place them all here. Do
+// some checks. Eg:
+// - That all binders match with some of the variables being declared
+// - No duplicates, etc...
+
+
+      //Adding all annotations for children nodes
+			return new NanoVarDeclStmt(this.getSourceSpan(), this.getAllAnnotations(), <NanoASTList<NanoVarDecl>>this.declarators.toNanoAST());
 		}
 
 		//NanoJS - end
