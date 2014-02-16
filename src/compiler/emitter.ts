@@ -1803,8 +1803,6 @@ module TypeScript {
           setASTDocument(doc);	//Important - set this here.
           setASTSemInfoChain(this.semanticInfoChain);
 
-          console.log(doc.script.moduleElements.docComments().map(c => c.text.join("\n")).join("\n"));
-
           var json = JSON.stringify(doc.script.toNanoAST().toObject(), undefined, 2);
           this.writeToOutput(json);
         }
