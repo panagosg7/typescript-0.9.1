@@ -17,7 +17,7 @@ module TypeScript {
 
 	export enum AnnotKind {
 		Meas,     // Measure
-  	Bind,     // Function / variable binder
+		Bind,     // Function / variable binder
 		Extern,   // External declaration
 		Type,     // Data type definition
 		TAlias,   // Type alias
@@ -26,26 +26,30 @@ module TypeScript {
 		Invt      // Invariant
 	}
 
-	export function annoKindIsGlob(ak: AnnotKind) {
-		return ak !== AnnotKind.Bind;
-	}
-
 	export class NanoAnnotation {
 
-		private _tag: AnnotKind;
-		private _content: string;
-
-		/** Returns true if this is a global annotation (can float to top-level). 
-        Compared to function / variable binders that need to be local to 
-        particular AST nodes. */
 		public isGlob(): boolean {
-			return annoKindIsGlob(this._tag);
+			throw new Error("ABSTRACT: NanoAnnotation.isGlob.")
 		}
 
-		constructor(public s: string) {
+		public static createAnnotation(s: string) {
 			var pair = NanoAnnotation.stringTag(s);
-			this._tag = pair.fst();
-			this._content = pair.snd();
+			switch (pair.fst()) {
+				case AnnotKind.Bind: 
+					return new NanoBindAnnotation(pair.fst(), pair.snd()); 
+				default:
+					return new NanoGlobalAnnotation(pair.fst(), pair.snd()); 
+			}
+		} 
+
+		constructor(private _tag: AnnotKind, private _content: string) { }
+
+		public getContent(): string {
+			return this._content;
+		}
+
+		public getKind(): AnnotKind {
+			return this._tag;
 		}
 
 		public toObject(): any {
@@ -53,16 +57,16 @@ module TypeScript {
 			obj[AnnotKind[this._tag]] = this._content;
 			return obj;
 		}
-	
+
 		private static stringTag(s: string): Pair<AnnotKind, string> {
 			var tokens = NanoAnnotation.stringTokens(s);
 			if (tokens && tokens.length > 0) {
 				var kind = NanoAnnotation.toSpecKind(tokens[0]);
-				if (annoKindIsGlob(kind)) {
-					return new Pair(NanoAnnotation.toSpecKind(tokens[0]), tokens.slice(1).join(" "));
+				if (kind === AnnotKind.Bind) {
+					return new Pair(AnnotKind.Bind, tokens.join(" "));
 				}
 				else {
-					return new Pair(AnnotKind.Bind, tokens.join(" "));
+					return new Pair(NanoAnnotation.toSpecKind(tokens[0]), tokens.slice(1).join(" "));
 				}
 			}
 			throw new Error("NanoAnnotation could not parse string tag: " + s);
@@ -86,5 +90,53 @@ module TypeScript {
 			}
 		}
 	}
+
+	export class NanoBindAnnotation extends NanoAnnotation {
+
+		/** Returns true if this is a global annotation (can float to top-level). 
+			Compared to function / variable binders that need to be local to 
+			particular AST nodes. */
+		public isGlob(): boolean {
+			return true;
+		}
+
+		private _binderName: string = null;
+
+		public getBinderName(): string {
+			if (this._binderName)
+				return this._binderName;
+			var content = this.getContent();
+			var bs = content.split("::");
+			if (bs && bs.length == 2) {
+				var lhss = bs[0].split(" ").filter(s => s.length > 0);
+				if (lhss && lhss.length == 1) {
+					this._binderName = lhss[0];
+					return this._binderName;
+				}
+				else {
+					throw new Error("bad nano-js binder(1): " + content);
+				}
+			}
+			throw new Error("bad nano-js binder(0): " + content);
+		}
+
+		constructor(t: AnnotKind, s: string) {
+			super(t, s);
+		}
+
+	}
+
+	export class NanoGlobalAnnotation extends NanoAnnotation {
+
+		public isGlob(): boolean {
+			return true;
+		}
+		constructor(t: AnnotKind, s: string) {
+			super(t, s);
+		}
+
+	}
+
+
 
 }

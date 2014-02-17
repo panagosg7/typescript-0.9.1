@@ -4,7 +4,8 @@ function assert(x: boolean) { };
 
 class Foo<A> { 
 
-  public f /*@ A */ = 1;
+  /*@ f :: A */
+  public f = 1;
   
   /*@ (x:A) => void */
   constructor(x) {
