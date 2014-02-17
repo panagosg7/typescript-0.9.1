@@ -3,11 +3,13 @@ function assert(x) { }
 
 class BankAccount { 
 
-  public f /*@ { number | v > 0 } */ = 1;
+  /*@ f :: { number | v > 0 } */
+  public f = 1;
 
-  public g /*@ { string | v = "a" } */ = "a";
+  /*@ g :: { string | v = "a" } */
+  public g = "a";
   
-  /*@ (x: { number | v > 0 } ) => void */
+  /*@ constructor :: (x: { number | v > 0 } ) => void */
   constructor(x) {
     assert( x > 0 );
     assert(this.g == "a");
@@ -15,6 +17,6 @@ class BankAccount {
 
 }
 
-//var ba = new BankAccount(1);
+var ba = new BankAccount(1);
 
-//assert(ba.g == "a");
+assert(ba.g == "a");

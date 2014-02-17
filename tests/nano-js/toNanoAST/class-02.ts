@@ -4,13 +4,12 @@ class A {
 
 class B extends A {
 
-	constructor() {
-		super();
-	}
+  constructor() {
+    super();
+  }
 
 }
 
-
 class C extends B {
- 
+
 }

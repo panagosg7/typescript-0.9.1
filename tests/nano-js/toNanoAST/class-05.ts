@@ -1,13 +1,18 @@
+/*@ assert :: (boolean) => void */
+function assert(x: boolean) { };
+
 class A {
 
-  /*@ () => void */
+  /*@ constructor :: () => void */
   constructor() { }
 
-  public a /*@ { number | v > 0 } */ = 1;
+  /*@ a :: { number | v > 0 } */
+  public a = 1;
 
-  public b /*@ { number | v = 1 } */ = 1;
+  /*@ b :: { number | v = 1 } */
+  public b = 1;
 
-  /*@ () => { number | v > 1 } */
+  /*@ foo :: () => { number | v > 1 } */
   public foo() {
     return 2;  
   }
@@ -16,12 +21,15 @@ class A {
 
 class B extends A {
 
-  /*@ () => void */
-  constructor() { }
+  /*@ constructor :: () => void */
+  constructor() {
+    super();
+  }
 
-  public a /*@  { number | v > 5 } */ = 10;
+  /*@  a :: { number | v > 5 } */
+  public a = 10;
 
-  /*@ () => { number | v > 5 } */
+  /*@ foo :: () => { number | v > 5 } */
   public foo() {
     return 10;  
   }

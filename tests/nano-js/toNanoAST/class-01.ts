@@ -10,14 +10,14 @@ class Greeter {
   
   private static e /*@ { } */ = { };
   
-  /*@ (message: string) => void */
+  /*@ constructor :: (message: string) => void */
   constructor(message) { }
-  /*@ () => void */
+  /*@ greet1 :: () => void */
   private greet1() { }
 
-  /*@ () => void */
+  /*@ greet2 :: () => void */
   greet2() { }
 
-  /*@ () => void */
+  /*@ greet3 :: () => void */
   public greet3() { }
 }

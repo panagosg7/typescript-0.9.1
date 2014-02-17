@@ -74,11 +74,13 @@ module TypeScript {
 		astIDString: string;
 		getLength(): number;
 
+		toNanoAST(): NanoAST;
 		toNanoExp(): NanoExpression;
 		toNanoStmt(): NanoStatement;
 		toNanoLValue(): NanoLValue;
 		toNanoClassElt(): NanoClassElt;
 		toNanoForInit(): NanoForInit;
+		toNanoVarDecl(anns: NanoBindAnnotation[]): NanoVarDecl;
 
     }
 
@@ -245,6 +247,10 @@ module TypeScript {
 			throw new Error("toNanoForInit not implemented for " + NodeType[this.nodeType()]);
 		}
 
+		public toNanoVarDecl(anns: NanoBindAnnotation[]): NanoVarDecl {
+			throw new Error("toNanoVarDecl not implemented for " + NodeType[this.nodeType()]);
+		}
+
 		public getSourceSpan(): NanoSourceSpan {
 			if (document) {
 			//Adjusting the line and column in NanoSourceSpan
@@ -274,7 +280,7 @@ module TypeScript {
 			return annStrings.map(s => NanoAnnotation.createAnnotation(s));
 		}
 
-    /** Returns all annotations of the AST rooted at the current node */
+    /** Returns all annotations (recursively) of the AST rooted at the current node */
 		public getAllNanoAnnotations(): NanoAnnotation[] {
 			var annots: NanoAnnotation[] = [];
 			TypeScript.getAstWalkerFactory().walk(this, function (cur: AST, parent: AST, walker: IAstWalker) {
@@ -326,6 +332,10 @@ module TypeScript {
 
 		public toNanoClassElt(): NanoASTList<NanoClassElt> {
 			return new NanoASTList(this.members.map(m => m.toNanoClassElt()));
+		}
+
+		public toNanoVarDecl(anns: NanoBindAnnotation[]): NanoASTList<NanoVarDecl> {
+			return new NanoASTList(this.members.map(m => m.toNanoVarDecl(anns)));
 		}
 		//NanoJS - end
 
@@ -1189,10 +1199,11 @@ module TypeScript {
         }
 
 		//NanoJS - begin
-		public toNanoAST(): NanoVarDecl {
-			//DO NOT add binder annotations for this node, since they will have been added at the VariableDeclaration level 
-			var anns = this.getNanoAnnotations().filter(a => a.getKind() !== AnnotKind.Bind);
-			return new NanoVarDecl(this.getSourceSpan(), anns, this.id.toNanoAST(), (this.init) ? this.init.toNanoExp() : null);
+		public toNanoVarDecl(anns: NanoBindAnnotation[]): NanoVarDecl {
+			//All necessary binders need to be in @anns@
+			return new NanoVarDecl(this.getSourceSpan(),
+				anns.filter(a => a.getBinderName() === this.id.text()),
+				this.id.toNanoAST(), (this.init) ? this.init.toNanoExp() : null);
 		}
 
 		public toNanoClassElt(): NanoClassElt {
@@ -1226,7 +1237,6 @@ module TypeScript {
         }
 
 		//NanoJS - begin
-		//TODO: omitting type here!!!
 		public toNanoAST(): NanoAST {
 			return this.id.toNanoAST();
 		}		
@@ -1744,49 +1754,28 @@ module TypeScript {
     }
 
     export class VariableDeclaration extends AST {
-        constructor(public declarators: ASTList) {
-            super();
-        }
-
-        public nodeType(): NodeType {
-            return NodeType.VariableDeclaration;
-        }
-
-        public emit(emitter: Emitter) {
-            emitter.emitVariableDeclaration(this);
-        }
-
-        public structuralEquals(ast: VariableDeclaration, includingPosition: boolean): boolean {
-            return super.structuralEquals(ast, includingPosition) &&
-                   structuralEquals(this.declarators, ast.declarators, includingPosition);
-        }
-
-		//NanoJS - begin
-		//Equivalent to VarDeclStmt in language-ecmascript
-		public toNanoForInit(): NanoForInit {
-			return new NanoVarInit(this.getSourceSpan(), this.getNanoAnnotations(), <NanoASTList<NanoVarDecl>>this.declarators.toNanoAST());
+		constructor(public declarators: ASTList) {
+			super();
 		}
 
-		public toNanoStmt(): NanoVarDeclStmt {
-			//console.log("VariableDeclaration: " + this.getNanoAnnotations().map(a =>
-			//      JSON.stringify(a.toObject())));
+		public nodeType(): NodeType {
+			return NodeType.VariableDeclaration;
+		}
 
+		public emit(emitter: Emitter) {
+			emitter.emitVariableDeclaration(this);
+		}
 
-			//Gather all annotations from the current node and all Bind annotations from the children nodes.
-			var anns = this.getAllNanoAnnotations();
-			var bindAnns: NanoBindAnnotation[] = <NanoBindAnnotation[]>anns.filter(a => a.getKind() === AnnotKind.Bind);
-			anns = anns.concat(bindAnns);
+		public structuralEquals(ast: VariableDeclaration, includingPosition: boolean): boolean {
+			return super.structuralEquals(ast, includingPosition) &&
+				structuralEquals(this.declarators, ast.declarators, includingPosition);
+		}
 
-			var definedIds: Identifier[] = [];
-			TypeScript.getAstWalkerFactory().walk(this, function (cur: AST, parent: AST, walker: IAstWalker) {
-				if (cur.nodeType() === NodeType.VariableDeclarator) {
-					var varDecl = <VariableDeclarator>cur;
-					definedIds = definedIds.concat(varDecl.id);
-				}
-				return cur;
-			});
+		//NanoJS - begin
+
+		private sanityCheck(bindAnns: NanoBindAnnotation[]) {
 			//Next, do some sanity checks...
-			var definedNames = definedIds.map(id => id.text());
+			var definedNames = this.definedNames();
 			// 1. All binders match with exactly one variable being declared
 			bindAnns.forEach(function (b: NanoBindAnnotation) {
 				if (definedNames.indexOf(b.getBinderName()) < 0) {
@@ -1806,9 +1795,44 @@ module TypeScript {
 			if (results.length > 0) {
 				throw new Error("Duplicate type annotation for variables: " + results.join(", "));
 			}
+		}
 
+		private definedVars(): Identifier[] {
+			var definedIds: Identifier[] = [];
+			TypeScript.getAstWalkerFactory().walk(this, function (cur: AST, parent: AST, walker: IAstWalker) {
+				if (cur.nodeType() === NodeType.VariableDeclarator) {
+					var varDecl = <VariableDeclarator>cur;
+					definedIds = definedIds.concat(varDecl.id);
+				}
+				return cur;
+			});
+			return definedIds;
+		}
+
+		private definedNames(): string[] {
+			return this.definedVars().map(id => id.text());
+		}
+
+		public toNanoForInit(): NanoForInit {
+			//Gather all annotations from the current node and all Bind annotations from the children nodes.
+			var anns = this.getAllNanoAnnotations();
+			var bindAnns: NanoBindAnnotation[] = <NanoBindAnnotation[]>anns.filter(a => a.getKind() === AnnotKind.Bind);
+			var sortedBinds = bindAnns.map(b => b.getBinderName()).sort();
+			var noBindAnns: NanoAnnotation[] = <NanoBindAnnotation[]>anns.filter(a => a.getKind() !== AnnotKind.Bind);
+			//Sanity checks
+			this.sanityCheck(bindAnns);
+			return new NanoVarInit(this.getSourceSpan(), noBindAnns, <NanoASTList<NanoVarDecl>>this.declarators.toNanoVarDecl(bindAnns));
+		}
+
+		public toNanoStmt(): NanoVarDeclStmt {
+			//Gather all annotations from the current node and all Bind annotations from the children nodes.
+			var anns = this.getAllNanoAnnotations();
+			var bindAnns: NanoBindAnnotation[] = <NanoBindAnnotation[]>anns.filter(a => a.getKind() === AnnotKind.Bind);
+			var noBindAnns: NanoAnnotation[] = <NanoBindAnnotation[]>anns.filter(a => a.getKind() !== AnnotKind.Bind);
+			//Sanity checks
+			this.sanityCheck(bindAnns);
 			//Adding all annotations for children nodes
-			return new NanoVarDeclStmt(this.getSourceSpan(), this.getAllNanoAnnotations(), <NanoASTList<NanoVarDecl>>this.declarators.toNanoAST());
+			return new NanoVarDeclStmt(this.getSourceSpan(), noBindAnns, <NanoASTList<NanoVarDecl>>this.declarators.toNanoVarDecl(bindAnns));
 		}
 
 		//NanoJS - end
