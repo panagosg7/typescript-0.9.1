@@ -19,4 +19,4 @@ class BankAccount {
 
 var ba = new BankAccount(1);
 
-assert(ba.g == "a");
+//assert(ba.g == "a");
