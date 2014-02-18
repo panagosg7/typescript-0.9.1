@@ -16,14 +16,14 @@ module TypeScript {
 	}
 
 	export enum AnnotKind {
-		Meas,     // Measure
-		Bind,     // Function / variable binder
-		Extern,   // External declaration
-		Type,     // Data type definition
-		TAlias,   // Type alias
-		PAlias,   // Predicate alias
-		Qual,     // Qualifier
-		Invt      // Invariant
+		RawMeas,     // Measure
+		RawBind,     // Function / variable binder
+		RawExtern,   // External declaration
+		RawType,     // Data type definition
+		RawTAlias,   // Type alias
+		RawPAlias,   // Predicate alias
+		RawQual,     // Qualifier
+		RawInvt      // Invariant
 	}
 
 	export class NanoAnnotation {
@@ -35,7 +35,7 @@ module TypeScript {
 		public static createAnnotation(s: string) {
 			var pair = NanoAnnotation.stringTag(s);
 			switch (pair.fst()) {
-				case AnnotKind.Bind: 
+				case AnnotKind.RawBind: 
 					return new NanoBindAnnotation(pair.fst(), pair.snd()); 
 				default:
 					return new NanoGlobalAnnotation(pair.fst(), pair.snd()); 
@@ -62,8 +62,8 @@ module TypeScript {
 			var tokens = NanoAnnotation.stringTokens(s);
 			if (tokens && tokens.length > 0) {
 				var kind = NanoAnnotation.toSpecKind(tokens[0]);
-				if (kind === AnnotKind.Bind) {
-					return new Pair(AnnotKind.Bind, tokens.join(" "));
+				if (kind === AnnotKind.RawBind) {
+					return new Pair(AnnotKind.RawBind, tokens.join(" "));
 				}
 				else {
 					return new Pair(NanoAnnotation.toSpecKind(tokens[0]), tokens.slice(1).join(" "));
@@ -79,14 +79,14 @@ module TypeScript {
 
 		private static toSpecKind(s: string): AnnotKind {
 			switch (s) {
-				case "measure": return AnnotKind.Meas;
-				case "qualif": return AnnotKind.Qual;
-				case "type": return AnnotKind.Type;
-				case "alias": return AnnotKind.TAlias;
-				case "predicate": return AnnotKind.PAlias;
-				case "invariant": return AnnotKind.Invt;
-				case "extern": return AnnotKind.Extern;
-				default: return AnnotKind.Bind;
+				case "measure": return AnnotKind.RawMeas;
+				case "qualif": return AnnotKind.RawQual;
+				case "type": return AnnotKind.RawType;
+				case "alias": return AnnotKind.RawTAlias;
+				case "predicate": return AnnotKind.RawPAlias;
+				case "invariant": return AnnotKind.RawInvt;
+				case "extern": return AnnotKind.RawExtern;
+				default: return AnnotKind.RawBind;
 			}
 		}
 	}
@@ -136,7 +136,5 @@ module TypeScript {
 		}
 
 	}
-
-
 
 }

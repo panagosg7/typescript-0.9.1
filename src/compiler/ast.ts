@@ -1357,7 +1357,7 @@ module TypeScript {
 	
 			var name = this.name.text();
 			var anns = this.getNanoAnnotations();
-			var bindAnns: NanoBindAnnotation[] = <NanoBindAnnotation[]> anns.filter(a => a.getKind() === AnnotKind.Bind);
+			var bindAnns: NanoBindAnnotation[] = <NanoBindAnnotation[]> anns.filter(a => a.getKind() === AnnotKind.RawBind);
 			var bindAnnNames: string[] = bindAnns.map(a => (<NanoBindAnnotation>a).getBinderName());
 
 			if (bindAnnNames.length > 0 && !arrays_equal(bindAnnNames, [name])) {
@@ -1377,7 +1377,7 @@ module TypeScript {
 			}
 			var name = (this.isConstructor) ? "constructor" : this.name.text();
 			var anns = this.getNanoAnnotations();
-			var bindAnns: NanoBindAnnotation[] = <NanoBindAnnotation[]> anns.filter(a => a.getKind() === AnnotKind.Bind);
+			var bindAnns: NanoBindAnnotation[] = <NanoBindAnnotation[]> anns.filter(a => a.getKind() === AnnotKind.RawBind);
 			var bindAnnNames: string[] = bindAnns.map(a => (<NanoBindAnnotation>a).getBinderName());
 
 			if (bindAnnNames.length > 0 && !arrays_equal(bindAnnNames, [name])) {
@@ -1816,9 +1816,9 @@ module TypeScript {
 		public toNanoForInit(): NanoForInit {
 			//Gather all annotations from the current node and all Bind annotations from the children nodes.
 			var anns = this.getAllNanoAnnotations();
-			var bindAnns: NanoBindAnnotation[] = <NanoBindAnnotation[]>anns.filter(a => a.getKind() === AnnotKind.Bind);
+			var bindAnns: NanoBindAnnotation[] = <NanoBindAnnotation[]>anns.filter(a => a.getKind() === AnnotKind.RawBind);
 			var sortedBinds = bindAnns.map(b => b.getBinderName()).sort();
-			var noBindAnns: NanoAnnotation[] = <NanoBindAnnotation[]>anns.filter(a => a.getKind() !== AnnotKind.Bind);
+			var noBindAnns: NanoAnnotation[] = <NanoBindAnnotation[]>anns.filter(a => a.getKind() !== AnnotKind.RawBind);
 			//Sanity checks
 			this.sanityCheck(bindAnns);
 			return new NanoVarInit(this.getSourceSpan(), noBindAnns, <NanoASTList<NanoVarDecl>>this.declarators.toNanoVarDecl(bindAnns));
@@ -1827,8 +1827,8 @@ module TypeScript {
 		public toNanoStmt(): NanoVarDeclStmt {
 			//Gather all annotations from the current node and all Bind annotations from the children nodes.
 			var anns = this.getAllNanoAnnotations();
-			var bindAnns: NanoBindAnnotation[] = <NanoBindAnnotation[]>anns.filter(a => a.getKind() === AnnotKind.Bind);
-			var noBindAnns: NanoAnnotation[] = <NanoBindAnnotation[]>anns.filter(a => a.getKind() !== AnnotKind.Bind);
+			var bindAnns: NanoBindAnnotation[] = <NanoBindAnnotation[]>anns.filter(a => a.getKind() === AnnotKind.RawBind);
+			var noBindAnns: NanoAnnotation[] = <NanoBindAnnotation[]>anns.filter(a => a.getKind() !== AnnotKind.RawBind);
 			//Sanity checks
 			this.sanityCheck(bindAnns);
 			//Adding all annotations for children nodes
