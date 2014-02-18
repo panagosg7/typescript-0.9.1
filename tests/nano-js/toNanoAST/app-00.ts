@@ -1,4 +1,4 @@
-/*@ foo :: ({number | true}) => number */
+/*@ foo :: ({number | v > 0}) => number */
 function foo(x) { 
   return x; 
 };

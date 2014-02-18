@@ -1,7 +1,5 @@
 
-/*@ qualif   aaasa number, b :: number */
-
-/*@ a :: number*/
+/*@ a :: { number | v > 0 }  */
 /*@ b :: number*/
 var a = 1, 
     b = 2;
