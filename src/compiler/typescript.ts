@@ -652,7 +652,7 @@ module TypeScript {
                     }
                 }
 
-                // Set location info
+				// Set location info
                 emitter.setDocument(document);
                 emitter.emitJSON(document, /*startLine:*/false);
                 console.log("Emitting AST in JSON in: " + jsonFileName);

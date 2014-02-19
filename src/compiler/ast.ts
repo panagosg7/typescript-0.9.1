@@ -268,12 +268,12 @@ module TypeScript {
 			var pre = this.preComments();
 			if (pre) {
 				pre.forEach((p: Comment) => {
-					p.text.forEach(s => {
-						var t = s.match("/\*@(.*)\\*/");
-						if (t && t[1]) {
-							annStrings = annStrings.concat([t[1]]);
-						}
-					});
+					//Kill the end-of-line
+					var s = p.text.join(" ");
+					var t = s.match("/\*@(([^])*)\\*/");
+					if (t && t[1]) {
+						annStrings = annStrings.concat([t[1]]);
+					}
 				});
 			}
 			//TODO: possibly add check for multiple annotations on a single FunctionStmt etc.
@@ -289,6 +289,17 @@ module TypeScript {
 			});
 			return annots;
 		}
+
+		public getAllComments(): Comment[]{
+			var cmnts: Comment[] = [];
+			TypeScript.getAstWalkerFactory().walk(this, function (cur: AST, parent: AST, walker: IAstWalker) {
+				if (cur.preComments())
+					cmnts = cmnts.concat(cur.preComments());
+				return cur;
+			});
+			return cmnts;
+		}
+		
 		//NanoJS - end
 
    }
