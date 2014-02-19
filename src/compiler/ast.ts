@@ -639,6 +639,9 @@ module TypeScript {
 				case NodeType.NegateExpression:
 					return new NanoPrefixExpr(this.getSourceSpan(), this.getNanoAnnotations(), new NanoPrefixOp(NanoPrefixOpKind.PrefixMinus), this.operand.toNanoExp());
 					
+				case NodeType.ArrayLiteralExpression:
+					var list = <ASTList>this.operand;
+					return new NanoArrayLit(this.getSourceSpan(), this.getNanoAnnotations(), list.toNanoExp());
 				default:
 					throw new Error("UnaryExpression:toNanoExp nodetype not supported: " + NodeType[this.nodeType()]);
 			}
