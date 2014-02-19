@@ -2123,7 +2123,7 @@ module TypeScript {
 
 		//NanoJS - begin
 		public toNanoStmt(): NanoStatement {
-			var ret = this.returnExpression.toNanoExp();
+			var ret = this.returnExpression ? this.returnExpression.toNanoExp() : null;
 			return new NanoReturnStmt(this.getSourceSpan(), this.getNanoAnnotations(), ret);
 		}
 		//NanoJS - end
