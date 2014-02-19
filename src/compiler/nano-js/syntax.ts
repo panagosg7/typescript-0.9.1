@@ -726,6 +726,24 @@ module TypeScript {
 
 	}
 
+	export class NanoArrayLit extends NanoExpression {
+
+		public toObject() {
+			return {
+				ArrayLit: [
+					[this.span.toObject(), this.ann.map(a => a.toObject())],
+					this.members.toObject()
+				]
+			};
+		}
+		
+		constructor(public span: NanoSourceSpan, public ann: NanoAnnotation[], public members: NanoASTList<NanoExpression>) {
+			super();
+		}
+
+	}
+
+
 
 
 	/*****************************************************************************
