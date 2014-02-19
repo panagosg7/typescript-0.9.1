@@ -1,22 +1,20 @@
-/*@ assert :: (boolean) => void */
-function assert(x) { }
-
 class BankAccount { 
 
   /*@ f :: { number | v > 0 } */
   public f = 1;
 
-  /*@ g :: { string | v = "a" } */
-  public g = "a";
+  /*@ g :: { number  | v > 10 } */
+  /*@ g :: { number  | v > 10 } */
+  public g = 20;
   
-  /*@ constructor :: (x: { number | v > 0 } ) => void */
-  constructor(x) {
+  /*@ constructor :: (x: { number | v > 4 } ) => void */
+  constructor(x: number) {
     assert( x > 0 );
-    assert(this.g == "a");
+    //assert(this.g == "aaaa");
   }
 
 }
 
-var ba = new BankAccount(1);
+var ba = new BankAccount(5);
 
-//assert(ba.g == "a");
+assert(ba.g == 21);
