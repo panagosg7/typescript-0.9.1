@@ -469,11 +469,18 @@ module TypeScript {
 	export class NanoStringLit extends NanoExpression {
 
 		public toObject() {
+
+      //Quotes fix
+      var l = this.str.length;
+      var newStr = this.str
+      if (l > 1 && newStr[0] === '\"' && newStr[l-1] === '\"') {
+          newStr = newStr.substring(1, l-1);
+      }
+
 			return {
 				StringLit: [
 					[this.span.toObject(), this.ann.map(a => a.toObject())],
-					//TODO: strings appear with '\"' in beginning and end
-					this.str.toString()
+					newStr
 				]
 			};
 		}
