@@ -1,18 +1,22 @@
-This is essentially a fork of https://typescript.codeplex.com/
+**This is a fork of the [TypeScript](https://typescript.codeplex.com/) compiler, a Scalable JavaScript variant with types, classes and modules.**
 
-The Fidelity test folder has been removed from the entire history to cut down on size.
+It has been modified to work as a front-end to the [language-ecmascript](https://github.com/UCSD-PL/language-ecmascript) and [NanoJS](https://github.com/UCSD-PL/nano-js). More information as to how to use it for this purpose can be found [here](https://github.com/UCSD-PL/nano-js).
+
 
 ## TypeScript
 
-Scalable JavaScript development with types, classes and modules.
 
 ### Install
 
     npm install -g typescript
 
+
+
 ### Usage
     
     tsc hello.ts
+
+
 
 ### Build
 
@@ -30,6 +34,13 @@ Scalable JavaScript development with types, classes and modules.
     - `jake -T` lists the above commands. 
 
 
+
 ### Oneline build command:
   
     node bin/tsc.js -out built/local/tsc.js -removeComments -propagateEnumConstants -declaration -noImplicitAny --module commonjs src/compiler/tsc.ts
+
+
+
+### Notes
+
+ * The Fidelity test folder has been removed from the entire history to cut down on size.
