@@ -1,6 +1,3 @@
-/*@ assert :: (boolean) => void */
-function assert(x: boolean) { };
-
 
 class Foo<A> { 
 
