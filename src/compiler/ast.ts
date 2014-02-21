@@ -509,6 +509,13 @@ module TypeScript {
         public structuralEquals(ast: ParenthesizedExpression, includingPosition: boolean): boolean {
             return super.structuralEquals(ast, includingPosition);
         }
+
+		//NanoJS - begin
+		public toNanoExp() {
+			return new NanoSuperRef(this.getSourceSpan(), this.getNanoAnnotations());
+		}
+		//NanoJS - end
+ 
     }
 
     export class ParenthesizedExpression extends AST {
@@ -721,9 +728,6 @@ module TypeScript {
 
 		//NanoJS - begin
 		public toNanoExp(): NanoExpression {
-			if (this.target.nodeType() === NodeType.SuperExpression) {
-				return new NanoSuperExpr(this.getSourceSpan(), this.getNanoAnnotations(), this.arguments.toNanoExp());
-			}
 			return new NanoCallExpr(this.getSourceSpan(), this.getNanoAnnotations(), this.target.toNanoExp(), this.arguments.toNanoExp());	
 		}
 		//NanoJS - end

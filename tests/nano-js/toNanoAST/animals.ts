@@ -17,10 +17,14 @@ class Horse extends Animal {
         alert("Galloping...");
         super.move(45);
     }
+
+	constructor() {
+		super("Horsie");
+	}
 }
 
-var sam = new Snake("Sammy the Python")
-var tom: Animal = new Horse("Tommy the Palomino")
+var sam = new Snake("Sammy the Python");
+var tom: Animal = new Horse();
 
-sam.move()
-tom.move(34)
+sam.move();
+tom.move(34);	

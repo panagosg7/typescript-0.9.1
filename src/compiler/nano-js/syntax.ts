@@ -631,6 +631,20 @@ module TypeScript {
 		
 	}
 
+	export class NanoSuperRef extends NanoExpression {
+
+		public toObject() {
+			return {
+				SuperRef: [this.span.toObject(), this.ann.map(a => a.toObject())]
+			};
+		}
+
+		constructor(public span: NanoSourceSpan, public ann: NanoAnnotation[]) {
+			super();
+		}
+		
+	}
+
 	export class NanoNullLit extends NanoExpression {
 
 		public toObject() {
@@ -680,24 +694,7 @@ module TypeScript {
 
 	}
 
-	export class NanoSuperExpr extends NanoExpression {
-
-		public toObject() {
-			return {
-				SuperExpr: [
-					[this.span.toObject(), this.ann.map(a => a.toObject())],
-					this.args.toObject()
-				]
-			};
-		}
-
-		constructor(public span: NanoSourceSpan, public ann: NanoAnnotation[], public args: NanoASTList<NanoExpression>) {
-			super();
-		}
-
-	}
-
-	export class NanoUnaryAssignExpr extends NanoExpression {
+        export class NanoUnaryAssignExpr extends NanoExpression {
 
 		public toObject() {
 			return {
