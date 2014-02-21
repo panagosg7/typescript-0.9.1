@@ -389,7 +389,7 @@ module TypeScript {
 				LBracket: [
 					[this.span.toObject(), this.ann.map(a => a.toObject())],
 					this.e1.toObject(),
-					this.e1.toObject()
+					this.e2.toObject()
 				]
 			};
 		}
