@@ -268,14 +268,15 @@ module TypeScript {
 			var pre = this.preComments();
 			if (pre) {
 				pre.forEach((p: Comment) => {
-          if (p.text) {
-            //Kill the end-of-line
-            var s = p.text.join(" ");
-            var t = s.match("/\*@(([^])*)\\*/");
-            if (t && t[1]) {
-              annStrings = annStrings.concat([t[1]]);
-            }
-          }
+					var texts = p.getText();
+					if (texts) {
+						//Kill the end-of-line
+						var s = texts.join(" ");
+						var t = s.match("/\*@(([^])*)\\*/");
+						if (t && t[1]) {
+							annStrings = annStrings.concat([t[1]]);
+						}
+					}
 				});
 			}
 			//TODO: possibly add check for multiple annotations on a single FunctionStmt etc.
