@@ -5,12 +5,9 @@ module TypeScript {
 
 	export class NanoAST {
 
-		public annotations: NanoAnnotation[];
+		public annotations: NanoAnnotation[] = [];
 
 		public addAnnotations(as: NanoAnnotation[]) {
-			if (!this.annotations) {
-				this.annotations = [];
-			}
 			this.annotations = this.annotations.concat(as);
 		}
 

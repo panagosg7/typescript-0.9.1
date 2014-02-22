@@ -16,55 +16,75 @@
 ///<reference path='typescript.ts' />
 
 module TypeScript {
-    export interface IASTSpan {
-        minChar: number;
-        limChar: number;
-        trailingTriviaWidth: number;
-    }
+	export interface IASTSpan {
+		minChar: number;
+		limChar: number;
+		trailingTriviaWidth: number;
+	}
 
-    export class ASTSpan implements IASTSpan {
-        public minChar: number = -1;  // -1 = "undefined" or "compiler generated"
-        public limChar: number = -1;  // -1 = "undefined" or "compiler generated"
-        public trailingTriviaWidth = 0;
-    }
+	export class ASTSpan implements IASTSpan {
+		public minChar: number = -1;  // -1 = "undefined" or "compiler generated"
+		public limChar: number = -1;  // -1 = "undefined" or "compiler generated"
+		public trailingTriviaWidth = 0;
+	}
 
-    var astID = 0;
+	var astID = 0;
 
-    export function structuralEqualsNotIncludingPosition(ast1: AST, ast2: AST): boolean {
-        return structuralEquals(ast1, ast2, false);
-    }
+	export function structuralEqualsNotIncludingPosition(ast1: AST, ast2: AST): boolean {
+		return structuralEquals(ast1, ast2, false);
+	}
 
-    export function structuralEqualsIncludingPosition(ast1: AST, ast2: AST): boolean {
-        return structuralEquals(ast1, ast2, true);
-    }
+	export function structuralEqualsIncludingPosition(ast1: AST, ast2: AST): boolean {
+		return structuralEquals(ast1, ast2, true);
+	}
 
-    function structuralEquals(ast1: AST, ast2: AST, includingPosition: boolean): boolean {
-        if (ast1 === ast2) {
-            return true;
-        }
+	function structuralEquals(ast1: AST, ast2: AST, includingPosition: boolean): boolean {
+		if (ast1 === ast2) {
+			return true;
+		}
 
-        return ast1 !== null && ast2 !== null &&
-               ast1.nodeType() === ast2.nodeType() &&
-               ast1.structuralEquals(ast2, includingPosition);
-    }
+		return ast1 !== null && ast2 !== null &&
+			ast1.nodeType() === ast2.nodeType() &&
+			ast1.structuralEquals(ast2, includingPosition);
+	}
 
-    function astArrayStructuralEquals(array1: AST[], array2: AST[], includingPosition: boolean): boolean {
-        return ArrayUtilities.sequenceEquals(array1, array2,
-            includingPosition ? structuralEqualsIncludingPosition : structuralEqualsNotIncludingPosition);
-    }
+	function astArrayStructuralEquals(array1: AST[], array2: AST[], includingPosition: boolean): boolean {
+		return ArrayUtilities.sequenceEquals(array1, array2,
+			includingPosition ? structuralEqualsIncludingPosition : structuralEqualsNotIncludingPosition);
+	}
 
 
 
 	//NanoJS - begin
-	var document: Document = null;
-	export function setASTDocument(doc: Document) {
-		document = doc;		
+	export class ASTHelper {
+
+		constructor(private _document: Document, private _semInfoChain: SemanticInfoChain) { }
+
+		public getDeclForAST(ast: AST): PullDecl {
+			if (this._semInfoChain) {
+				return this._semInfoChain.getDeclForAST(ast, this._document.fileName);
+			}
+			throw new Error("ASTHelper: SeminfoChain has not been initialized.");
+		}
+
+		//Only use after typechecking is done
+		private _resolver: PullTypeResolver = null;
+		public setASTPullTypeResolver(p: PullTypeResolver) {
+			this._resolver = p;
+		}
+
+		public getSourceSpan(ast: AST): NanoSourceSpan {
+			if (this._document) {
+			//Adjusting the line and column in NanoSourceSpan
+				var startLineAndChar = this._document.lineMap.getLineAndCharacterFromPosition(ast.minChar);
+				var stopLineAndChar = this._document.lineMap.getLineAndCharacterFromPosition(ast.limChar);
+				return new NanoSourceSpan(this._document.fileName, startLineAndChar, stopLineAndChar);
+			}
+			throw new Error("Something went wrong with the lineMap.");
+		}
 	}
 
-	var semInfoChain: SemanticInfoChain = null;
-	export function setASTSemInfoChain(sic: SemanticInfoChain) {
-		semInfoChain = sic;
-	}
+	export var astHelper: ASTHelper = null;
 	//NanoJS - end
 
 
@@ -80,7 +100,7 @@ module TypeScript {
 		toNanoLValue(): NanoLValue;
 		toNanoClassElt(): NanoClassElt;
 		toNanoForInit(): NanoForInit;
-		toNanoVarDecl(anns: NanoBindAnnotation[]): NanoVarDecl;
+		toNanoVarDecl(anns: NanoBindAnnotation[]): NanoAST;		// Needs to be this way to capture ambient declarations.
 
     }
 
@@ -247,19 +267,12 @@ module TypeScript {
 			throw new Error("toNanoForInit not implemented for " + NodeType[this.nodeType()]);
 		}
 
-		public toNanoVarDecl(anns: NanoBindAnnotation[]): NanoVarDecl {
+		public toNanoVarDecl(anns: NanoBindAnnotation[]): NanoAST {
 			throw new Error("toNanoVarDecl not implemented for " + NodeType[this.nodeType()]);
 		}
 
 		public getSourceSpan(): NanoSourceSpan {
-			if (document) {
-			//Adjusting the line and column in NanoSourceSpan
-				var startLineAndChar = document.lineMap.getLineAndCharacterFromPosition(this.minChar);
-				var stopLineAndChar = document.lineMap.getLineAndCharacterFromPosition(this.limChar);
-				return new NanoSourceSpan(document.fileName, startLineAndChar, stopLineAndChar);
-			}
-			console.log("Something went wrong with the lineMap.");
-			process.exit(1);
+			return astHelper.getSourceSpan(this);
 		}
 
     /** Returns annotations of the current AST node */
@@ -348,7 +361,7 @@ module TypeScript {
 			return new NanoASTList(this.members.map(m => m.toNanoClassElt()));
 		}
 
-		public toNanoVarDecl(anns: NanoBindAnnotation[]): NanoASTList<NanoVarDecl> {
+		public toNanoVarDecl(anns: NanoBindAnnotation[]): NanoASTList<NanoAST> {
 			return new NanoASTList(this.members.map(m => m.toNanoVarDecl(anns)));
 		}
 		//NanoJS - end
@@ -1220,7 +1233,24 @@ module TypeScript {
         }
 
 		//NanoJS - begin
-		public toNanoVarDecl(anns: NanoBindAnnotation[]): NanoVarDecl {
+		public toNanoVarDecl(anns: NanoBindAnnotation[]): NanoAST {
+
+			//If this is an ambient variable, force it to have a type annotation.
+			var pullDecl = astHelper.getDeclForAST(this);
+			if ((pullDecl.flags & PullElementFlags.Ambient) === PullElementFlags.Ambient) {
+				
+				if (anns.filter(a => a.getKind() === AnnotKind.RawBind && a.getBinderName() === this.id.text()).length !== 1) {
+					console.log(this.getSourceSpan().toString());
+					console.log("Ambient variable declarator for '" + this.id.text() + "' needs to have exactly one type annotation.");
+					process.exit(1);
+				}
+				//Ambient Variable declarators are translated to "extern"'s in NanoJS, and added to an EmptyStatement
+				//We are counting on the fact that TypeScript only allows VariableStatements to be ambient or not 
+				//alltogether, so we won't be mixing up EmptyStatements and VariableDeclarators.
+				//The actual annotations are handled by VariableDeclaration, so we don't have to populate them here.
+				return new NanoEmptyStmt(this.getSourceSpan(), []);
+			}
+ 
 			//All necessary binders need to be in @anns@
 			return new NanoVarDecl(this.getSourceSpan(),
 				anns.filter(a => a.getBinderName() === this.id.text()),
@@ -1382,7 +1412,9 @@ module TypeScript {
 			var bindAnnNames: string[] = bindAnns.map(a => (<NanoBindAnnotation>a).getBinderName());
 
 			if (bindAnnNames.length > 0 && !arrays_equal(bindAnnNames, [name])) {
-				throw new Error(name + " should have a single annotation.");
+				console.log(this.getSourceSpan().toString());
+				console.log("Function '" + name + "' should have a single annotation.");
+				process.exit(1);
 			}
 
 			return new NanoFunctionStmt(this.getSourceSpan(), anns,
@@ -1408,13 +1440,27 @@ module TypeScript {
 			if (this.isConstructor) {
 				//TODO: use this inferred type if none is specified.
 				//var tFunSig = new TFunctionSig(this.getSignature().map(p => p.toTFunctionSigMember()));
-				var decl: PullDecl = semInfoChain.getDeclForAST(this, document.fileName);
+				var decl: PullDecl = astHelper.getDeclForAST(this);
 				var symb = decl.getSymbol();
+
+
+				this.arguments.members.map(function (m: AST) {
+					if (m.nodeType() === NodeType.Parameter) {
+						var param = <Parameter>m;
+						var d: PullDecl = astHelper.getDeclForAST(param);
+//HEREHER
+							//hasFlag( , FunctionFlags.Private));
+					}
+				});
+
+
 				return new NanoConstructor(this.getSourceSpan(), anns,
 					<NanoASTList<NanoId>>this.arguments.toNanoAST(),
 					new NanoASTList([this.block.toNanoStmt()]));
 			}
 			else {
+
+				//console.log(this.arguments.members.map(m => NodeType[m.nodeType()]));
 				return new NanoMemberMethDecl(this.getSourceSpan(), anns, 
 					hasFlag(this.getFunctionFlags(), FunctionFlags.Public),
 					hasFlag(this.getFunctionFlags(), FunctionFlags.Static),
@@ -1621,6 +1667,22 @@ module TypeScript {
 
 		//NanoJS - begin
 		public toNanoStmt() {
+
+			//TODO: gather field info
+
+			var symb: PullSymbol = astHelper.getDeclForAST(this).getSymbol();
+			if (symb && symb.type) {
+				var members = symb.type.getMembers();
+				members.forEach((m: PullSymbol) => {
+					//console.log(m.name 
+					//		+ "   Public flag: " + hasFlag(m.flags, VariableFlags.Public)
+					//		+ "   ClassProp flag: " + hasFlag(m.flags, VariableFlags.ClassProperty)
+					//		+ "   Private flag: " + hasFlag(d.flags, VariableFlags.Private)
+					//		+ "   PullElementFlags: " + TypeScript.hasFlag(d.flags, PullElementFlags.Private)
+					//		);
+				})
+			}
+
 			//Extends
 			var parent: Identifier = null;
 			if (this.extendsList && this.extendsList.members) {
@@ -1798,10 +1860,12 @@ module TypeScript {
 			//Next, do some sanity checks...
 			var definedNames = this.definedNames();
 			// 1. All binders match with exactly one variable being declared
-			bindAnns.forEach(function (b: NanoBindAnnotation) {
+			bindAnns.forEach((b: NanoBindAnnotation) => {
 				if (definedNames.indexOf(b.getBinderName()) < 0) {
-					throw new Error("Variable annotation binder for '" + b.getBinderName() +
+					console.log(this.getSourceSpan().toString());
+					console.log("Variable annotation binder for '" + b.getBinderName() +
 						"' does not correspond to any nearby variable declaration.");
+					process.exit(1);
 				}
 			});
 
@@ -1814,7 +1878,9 @@ module TypeScript {
 				}
 			}
 			if (results.length > 0) {
-				throw new Error("Duplicate type annotation for variables: " + results.join(", "));
+				console.log(this.getSourceSpan().toString());
+				console.log("Duplicate type annotation for variable(s): " + results.join(", "));
+				process.exit(1);
 			}
 		}
 
@@ -1842,10 +1908,15 @@ module TypeScript {
 			var noBindAnns: NanoAnnotation[] = <NanoBindAnnotation[]>anns.filter(a => a.getKind() !== AnnotKind.RawBind);
 			//Sanity checks
 			this.sanityCheck(bindAnns);
-			return new NanoVarInit(this.getSourceSpan(), noBindAnns, <NanoASTList<NanoVarDecl>>this.declarators.toNanoVarDecl(bindAnns));
+			//All variable declarators need to be translated to NanoVarDecls
+			var decls = this.declarators.toNanoVarDecl(bindAnns);
+			if (!decls.members.every(d => d instanceof NanoVarDecl)) {
+				throw new Error("toNanoForInit: can only have non-ambient variable declarators here.")
+			}
+			return new NanoVarInit(this.getSourceSpan(), noBindAnns, <NanoASTList<NanoVarDecl>>decls);
 		}
 
-		public toNanoStmt(): NanoVarDeclStmt {
+		public toNanoStmt(): NanoStatement {
 			//Gather all annotations from the current node and all Bind annotations from the children nodes.
 			var anns = this.getAllNanoAnnotations();
 			var bindAnns: NanoBindAnnotation[] = <NanoBindAnnotation[]>anns.filter(a => a.getKind() === AnnotKind.RawBind);
@@ -1853,9 +1924,22 @@ module TypeScript {
 			//Sanity checks
 			this.sanityCheck(bindAnns);
 			//Adding all annotations for children nodes
-			return new NanoVarDeclStmt(this.getSourceSpan(), noBindAnns, <NanoASTList<NanoVarDecl>>this.declarators.toNanoVarDecl(bindAnns));
+			
+			//All variable declarators need to be translated to either NanoVarDecls or EmptyStatements
+			var decls = this.declarators.toNanoVarDecl(bindAnns);
+			if (decls.members.every(d => d instanceof NanoVarDecl)) {
+				return new NanoVarDeclStmt(this.getSourceSpan(), noBindAnns, <NanoASTList<NanoVarDecl>>decls);
+			}
+			else if (decls.members.every(d => d instanceof NanoEmptyStmt)) {
+				//Here we are dealing with Ambient definitions, so keep all the no-binder annotations as they are,
+				//and translate the binder ones to extern annotations.
+				var allAnnots: NanoAnnotation[] =
+					noBindAnns.concat(bindAnns.map(b => new NanoGlobalAnnotation(AnnotKind.RawExtern, b.getContent())));
+				return new NanoEmptyStmt(this.getSourceSpan(), allAnnots);
+			} else {
+				throw new Error("VariableDeclaration:toNanoStmt: This shouldn't happen.");
+			}
 		}
-
 		//NanoJS - end
     }
 
