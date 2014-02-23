@@ -661,10 +661,21 @@ module TypeScript {
 
 				case NodeType.NegateExpression:
 					return new NanoPrefixExpr(this.getSourceSpan(), this.getNanoAnnotations(), new NanoPrefixOp(NanoPrefixOpKind.PrefixMinus), this.operand.toNanoExp());
+
+				case NodeType.LogicalNotExpression:
+					return new NanoPrefixExpr(this.getSourceSpan(), this.getNanoAnnotations(), new NanoPrefixOp(NanoPrefixOpKind.PrefixLNot), this.operand.toNanoExp());
 					
 				case NodeType.ArrayLiteralExpression:
 					var list = <ASTList>this.operand;
 					return new NanoArrayLit(this.getSourceSpan(), this.getNanoAnnotations(), list.toNanoExp());
+
+				case NodeType.TypeOfExpression:
+					return new NanoPrefixExpr(this.getSourceSpan(), this.getNanoAnnotations(), new NanoPrefixOp(NanoPrefixOpKind.PrefixTypeof), this.operand.toNanoExp());
+
+				// NOTE: For the moment cast expressions are ignored.
+				case NodeType.CastExpression:
+					return this.operand.toNanoExp();
+
 				default:
 					throw new Error("UnaryExpression:toNanoExp nodetype not supported: " + NodeType[this.nodeType()]);
 			}
@@ -927,6 +938,7 @@ module TypeScript {
 				case NodeType.LessThanOrEqualExpression:
 				case NodeType.LogicalOrExpression:
 				case NodeType.LogicalAndExpression:
+				case NodeType.NotEqualsWithTypeConversionExpression:
 					return new NanoInfixExpr(this.getSourceSpan(), this.getNanoAnnotations(), 
 						new NanoInfixOp(BinaryExpression.getTextForBinaryToken(this.nodeType())),
 						this.operand1.toNanoExp(),
