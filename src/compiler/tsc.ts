@@ -432,8 +432,6 @@ module TypeScript {
                 },
                 set: () => {
                     this.compilationSettings.nanoMode = true;
-					//Nano mode implies that lib is not included so we don't have to issue it separately
-					this.compilationSettings.noLib = true;
                 }
             });
 

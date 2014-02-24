@@ -1794,21 +1794,22 @@ module TypeScript {
             ast.emit(this);
         }
 
-        //NanoJS - begin
-        // tokenId is the id the preceding token
-        public emitJSON(doc: Document, startLine: boolean) {
-          if (doc === null) {
-            return;
-          }
-          setASTDocument(doc);	//Important - set this here.
-          setASTSemInfoChain(this.semanticInfoChain);
+		//NanoJS - begin
+		// tokenId is the id the preceding token
+		public emitJSON(doc: Document, startLine: boolean) {
+			if (doc === null) {
+				return;
+			}
 
-          //console.log(doc.script.getAllAnnotations().map(a =>
-          //      JSON.stringify(a.toObject())).join("\n"));
+			//XXX: Initialize this here!
+			astHelper = new ASTHelper(doc, this.semanticInfoChain);
 
-          var json = JSON.stringify(doc.script.toNanoAST().toObject(), undefined, 2);
-          this.writeToOutput(json);
-        }
+			//console.log(doc.script.getAllAnnotations().map(a =>
+			//      JSON.stringify(a.toObject())).join("\n"));
+
+			var json = JSON.stringify(doc.script.toNanoAST().toObject(), undefined, 2);
+			this.writeToOutput(json);
+		}
         //NanoJS - end
 
 

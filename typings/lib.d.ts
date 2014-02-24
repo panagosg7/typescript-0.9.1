@@ -9176,3 +9176,10 @@ declare var WScript: {
     ScriptFullName: string;
     Quit(exitCode?: number): number;
 }
+
+/////////////////////////////
+/// NanoJS
+/////////////////////////////
+
+declare function assert(cond: boolean): boolean;
+

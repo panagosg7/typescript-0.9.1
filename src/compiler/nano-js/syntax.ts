@@ -5,12 +5,9 @@ module TypeScript {
 
 	export class NanoAST {
 
-		public annotations: NanoAnnotation[];
+		public annotations: NanoAnnotation[] = [];
 
 		public addAnnotations(as: NanoAnnotation[]) {
-			if (!this.annotations) {
-				this.annotations = [];
-			}
 			this.annotations = this.annotations.concat(as);
 		}
 
@@ -389,7 +386,7 @@ module TypeScript {
 				LBracket: [
 					[this.span.toObject(), this.ann.map(a => a.toObject())],
 					this.e1.toObject(),
-					this.e1.toObject()
+					this.e2.toObject()
 				]
 			};
 		}
@@ -469,11 +466,18 @@ module TypeScript {
 	export class NanoStringLit extends NanoExpression {
 
 		public toObject() {
+
+      //Quotes fix
+      var l = this.str.length;
+      var newStr = this.str
+      if (l > 1 && newStr[0] === '\"' && newStr[l-1] === '\"') {
+          newStr = newStr.substring(1, l-1);
+      }
+
 			return {
 				StringLit: [
 					[this.span.toObject(), this.ann.map(a => a.toObject())],
-					//TODO: strings appear with '\"' in beginning and end
-					this.str.toString()
+					newStr
 				]
 			};
 		}
@@ -624,6 +628,20 @@ module TypeScript {
 		
 	}
 
+	export class NanoSuperRef extends NanoExpression {
+
+		public toObject() {
+			return {
+				SuperRef: [this.span.toObject(), this.ann.map(a => a.toObject())]
+			};
+		}
+
+		constructor(public span: NanoSourceSpan, public ann: NanoAnnotation[]) {
+			super();
+		}
+		
+	}
+
 	export class NanoNullLit extends NanoExpression {
 
 		public toObject() {
@@ -673,24 +691,7 @@ module TypeScript {
 
 	}
 
-	export class NanoSuperExpr extends NanoExpression {
-
-		public toObject() {
-			return {
-				SuperExpr: [
-					[this.span.toObject(), this.ann.map(a => a.toObject())],
-					this.args.toObject()
-				]
-			};
-		}
-
-		constructor(public span: NanoSourceSpan, public ann: NanoAnnotation[], public args: NanoASTList<NanoExpression>) {
-			super();
-		}
-
-	}
-
-	export class NanoUnaryAssignExpr extends NanoExpression {
+        export class NanoUnaryAssignExpr extends NanoExpression {
 
 		public toObject() {
 			return {
@@ -721,6 +722,23 @@ module TypeScript {
 		}
 		
 		constructor(public span: NanoSourceSpan, public ann: NanoAnnotation[], public op: NanoPrefixOp, public exp: NanoExpression) {
+			super();
+		}
+
+	}
+
+	export class NanoArrayLit extends NanoExpression {
+
+		public toObject() {
+			return {
+				ArrayLit: [
+					[this.span.toObject(), this.ann.map(a => a.toObject())],
+					this.members.toObject()
+				]
+			};
+		}
+		
+		constructor(public span: NanoSourceSpan, public ann: NanoAnnotation[], public members: NanoASTList<NanoExpression>) {
 			super();
 		}
 
