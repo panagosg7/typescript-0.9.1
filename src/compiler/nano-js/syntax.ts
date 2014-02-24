@@ -470,7 +470,8 @@ module TypeScript {
       //Quotes fix
       var l = this.str.length;
       var newStr = this.str
-      if (l > 1 && newStr[0] === '\"' && newStr[l-1] === '\"') {
+      if (l > 1 && (newStr[0] === '\"' && newStr[l-1] === '\"' || 
+                    newStr[0] === '\'' && newStr[l-1] === '\'')) {
           newStr = newStr.substring(1, l-1);
       }
 
@@ -732,23 +733,6 @@ module TypeScript {
 		public toObject() {
 			return {
 				ArrayLit: [
-					[this.span.toObject(), this.ann.map(a => a.toObject())],
-					this.members.toObject()
-				]
-			};
-		}
-		
-		constructor(public span: NanoSourceSpan, public ann: NanoAnnotation[], public members: NanoASTList<NanoExpression>) {
-			super();
-		}
-
-	}
-
-	export class NanoArrayLit extends NanoExpression {
-
-		public toObject() {
-			return {
-				PrefixExpr: [
 					[this.span.toObject(), this.ann.map(a => a.toObject())],
 					this.members.toObject()
 				]
