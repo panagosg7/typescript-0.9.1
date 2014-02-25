@@ -668,17 +668,12 @@ module TypeScript {
 				case NodeType.ArrayLiteralExpression:
 					var list = <ASTList>this.operand;
 					return new NanoArrayLit(this.getSourceSpan(), this.getNanoAnnotations(), list.toNanoExp());
-<<<<<<< HEAD
-=======
-
 				case NodeType.TypeOfExpression:
 					return new NanoPrefixExpr(this.getSourceSpan(), this.getNanoAnnotations(), new NanoPrefixOp(NanoPrefixOpKind.PrefixTypeof), this.operand.toNanoExp());
 
 				// NOTE: For the moment cast expressions are ignored.
 				case NodeType.CastExpression:
 					return this.operand.toNanoExp();
-
->>>>>>> 8699ee4667c9dd47ede88c32e9d193dc6824099f
 				default:
 					throw new Error("UnaryExpression:toNanoExp nodetype not supported: " + NodeType[this.nodeType()]);
 			}
