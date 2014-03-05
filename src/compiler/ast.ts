@@ -67,6 +67,13 @@ module TypeScript {
 			throw new Error("ASTHelper: SeminfoChain has not been initialized.");
 		}
 
+		public getSymbolForAST(ast: AST): PullSymbol {
+			if (this._semInfoChain) {
+				return this._semInfoChain.getSymbolForAST(ast, this._document.fileName);
+			}
+			throw new Error("ASTHelper: SeminfoChain has not been initialized.");
+		}
+
 		//Only use after typechecking is done
 		private _resolver: PullTypeResolver = null;
 		public setASTPullTypeResolver(p: PullTypeResolver) {
@@ -1708,15 +1715,60 @@ module TypeScript {
 				(this.implementsList && this.implementsList.members) ? <Identifier[]>this.implementsList.members : [];
 			var implementsInterfacesIds = implementsInterfaces.map(i => <NanoId>i.toNanoAST());
 
-			return new NanoClassStmt(this.getSourceSpan(), this.getNanoAnnotations(), 
+			//Class annotation:
+
+			var originalAnnots = this.getNanoAnnotations();
+
+			//Remove all class annotations and keep the rest
+			var restAnnots: NanoAnnotation[] = originalAnnots.filter(a => a.getKind() !== AnnotKind.RawClass);
+
+			//Is there a class annotation given?
+			var classAnnots: NanoAnnotation[] = originalAnnots.filter(a => a.getKind() === AnnotKind.RawClass);
+			var finalAnnot: NanoClassAnnotation = null;
+			if (classAnnots.length === 0) {
+				//No class annotation given - generate one based on class information from TypeScript.
+
+				var typeParams: TypeParameter[] = this.typeParameters ? <TypeParameter[]>(this.typeParameters.members) : <TypeParameter[]>[];
+
+				if (this.extendsList && this.extendsList.members.length === 1) {
+					//This class extends another one.
+					var baseNameDecl = this.extendsList.members[0];
+					var baseName = baseNameDecl.nodeType() === NodeType.InvocationExpression ? (<InvocationExpression>baseNameDecl).target : baseNameDecl;
+					switch (baseName.nodeType()) {
+						case NodeType.Name:
+						case NodeType.GenericType:
+							var baseSymbol = astHelper.getSymbolForAST(baseNameDecl);
+							finalAnnot = new NanoInferredClassAnnotation(
+								this.name, typeParams, baseSymbol.type.toNanoType());
+							break;
+						default:
+							throw new Error("BUG: A class cannot extend a " + NodeType[baseName.nodeType()]);
+					}
+				}
+				else {
+					//This class does not extend anyone.
+					finalAnnot = new NanoInferredClassAnnotation(this.name,
+						typeParams, null);
+				}
+			}
+			else if (classAnnots.length === 1) {
+			//TODO: Add sanity checks here - do these annotations agree with the TypeScript ones?
+				finalAnnot = <NanoExplicitClassAnnotation> classAnnots[0];
+			}
+			else {
+				console.log(this.getSourceSpan().toString());
+				console.log("Class '" + this.name.text() + "' has multiple class annoatations.");
+				process.exit(1);
+			}
+
+			restAnnots.push(finalAnnot);
+
+			return new NanoClassStmt(this.getSourceSpan(),
+				restAnnots,
 				this.name.toNanoAST(),
 				parent ? <NanoId>parent.toNanoAST() : null,
 				new NanoASTList<NanoId>(<any> implementsInterfacesIds),
 				this.members.toNanoClassElt());
-		}
-
-		public toNanoClassElt(): NanoClassElt {
-			throw new Error("UNIMPLEMENTED:ClassDeclaration:toNanoClassElt");
 		}
 
 		//NanoJS - end
@@ -1810,8 +1862,8 @@ module TypeScript {
 
 		//NanoJS - begin
 		public toNanoStmt(): NanoExprStmt {
-      //console.log("ExprStmt: " + this.getNanoAnnotations().map(a =>
-      //      JSON.stringify(a.toObject())));
+			//console.log("ExprStmt: " + this.getNanoAnnotations().map(a =>
+			//      JSON.stringify(a.toObject())));
 			return new NanoExprStmt(this.getSourceSpan(), this.getNanoAnnotations(), this.expression.toNanoExp());
 		}
 		//NanoJS - end
@@ -2469,6 +2521,12 @@ module TypeScript {
                    structuralEquals(this.name, ast.name, includingPosition) &&
                    structuralEquals(this.typeArguments, ast.typeArguments, includingPosition);
         }
+
+		//NanoJS - begin
+		public toNanoAST(): NanoAST {
+			return new NanoId(this.getSourceSpan(), this.getNanoAnnotations(), (<Identifier>this.name).actualText);
+		}
+		//NanoJS - end
     }
 
     export class TypeQuery extends AST {

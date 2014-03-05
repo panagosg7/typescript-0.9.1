@@ -20,6 +20,7 @@ module TypeScript {
 		RawBind,     // Function / variable binder
 		RawExtern,   // External declaration
 		RawType,     // Data type definition
+		RawClass,	 // Class annotations
 		RawTAlias,   // Type alias
 		RawPAlias,   // Predicate alias
 		RawQual,     // Qualifier
@@ -32,20 +33,29 @@ module TypeScript {
 			throw new Error("ABSTRACT: NanoAnnotation.isGlob.")
 		}
 
-		public static createAnnotation(s: string) {
+		/** This will create a NanoAnnoation object based on user annotations */
+		public static createAnnotation(s: string): NanoAnnotation {
 			var pair = NanoAnnotation.stringTag(s);
 			switch (pair.fst()) {
 				case AnnotKind.RawBind: 
 					return new NanoBindAnnotation(pair.fst(), pair.snd()); 
+				case AnnotKind.RawClass:
+					return new NanoExplicitClassAnnotation(pair.snd());
 				default:
 					return new NanoGlobalAnnotation(pair.fst(), pair.snd()); 
 			}
 		} 
 
-		constructor(private _tag: AnnotKind, private _content: string) { }
+		//These would have been protected ...
+		public _tag: AnnotKind;
+		public _content: string;
+
+		constructor(tag: AnnotKind) {
+			this._tag = tag;
+		}
 
 		public getContent(): string {
-			return this._content;
+			throw new Error("ABSTRACT: NanoAnnotation.getContent");
 		}
 
 		public getKind(): AnnotKind {
@@ -83,6 +93,7 @@ module TypeScript {
 				case "qualif": return AnnotKind.RawQual;
 				case "type": return AnnotKind.RawType;
 				case "alias": return AnnotKind.RawTAlias;
+				case "class": return AnnotKind.RawClass;
 				case "predicate": return AnnotKind.RawPAlias;
 				case "invariant": return AnnotKind.RawInvt;
 				case "extern": return AnnotKind.RawExtern;
@@ -120,19 +131,100 @@ module TypeScript {
 			throw new Error("bad nano-js binder(0): " + content);
 		}
 
-		constructor(t: AnnotKind, s: string) {
-			super(t, s);
+		//constructor(t: AnnotKind, s: string) {
+		constructor(tag: AnnotKind, content: string) {
+			super(tag);
+			this._content = content;
+		}
+
+		public getContent(): string {
+			return this._content;
 		}
 
 	}
+
+	export class NanoClassAnnotation extends NanoAnnotation { }
+
+
+	/** A class annotation that is inferred bassed on TypeScript information. */
+	export class NanoInferredClassAnnotation extends NanoClassAnnotation {
+
+		/** This is not a global annotation (cannot float to top-level). 
+			Needs to stick around a class declaration. */
+		public isGlob(): boolean {
+			return false;
+		}
+
+		private toString(): string {
+			var r = "";
+			r += "class ";
+			r += this._className.text();
+			if (this._typeParams && this._typeParams.length > 0) {
+				r += " <";
+				r += this._typeParams.map(t => t.name.text()).join(", ");
+				r += ">";
+			}
+			if (this._parent) {
+				r += " extends ";
+				r += this._parent.toString();
+			}
+			return r;
+		}
+
+		public toObject() {
+			var obj = {};
+			obj[AnnotKind[this._tag]] = this.toString();
+			return obj;
+		
+		}
+
+		constructor(private _className: Identifier, private _typeParams: TypeParameter[], private _parent: NanoType) {
+			super(AnnotKind.RawClass);
+		}
+
+		public getContent(): string {
+			if (!this._content) {
+				this._content = this.toString();
+			}
+			return this._content;
+		}
+
+	}
+
+	/** A class annotation that is provided by the user */
+	export class NanoExplicitClassAnnotation extends NanoClassAnnotation {
+
+		/** This is not a global annotation (cannot float to top-level). 
+			Needs to stick around a class declaration. */
+		public isGlob(): boolean {
+			return false;
+		}
+
+		constructor(content: string) {
+			super(AnnotKind.RawClass);
+			this._content = content;
+		}
+
+		public getContent(): string {
+			return this._content;
+		}
+
+	}
+
 
 	export class NanoGlobalAnnotation extends NanoAnnotation {
 
 		public isGlob(): boolean {
 			return true;
 		}
-		constructor(t: AnnotKind, s: string) {
-			super(t, s);
+
+		constructor(tag: AnnotKind, content: string) {
+			super(tag);
+			this._content = content;
+		}
+
+		public getContent(): string {
+			return this._content;
 		}
 
 	}

@@ -988,8 +988,8 @@ module TypeScript {
 		//NanoJS begin
 		public toTFunctionSigMember(): TFunctionSigMember {
 			var tParams = this.getTypeParameters().map(p => p.type.toNJSTypeParameter());
-			var tArgs = this.parameters.map(p => new BoundedNanoType(p.name, p.type.toNJSType()));
-			var retT = this.returnType.toNJSType();
+			var tArgs = this.parameters.map(p => new BoundedNanoType(p.name, p.type.toNanoType()));
+			var retT = this.returnType.toNanoType();
 			return new TFunctionSigMember(tParams, tArgs, retT);
 		}
 		//NanoJS end
@@ -1996,7 +1996,7 @@ module TypeScript {
 		//TS to Nano - begin
 
 		/** toNJSType: Convert a PullTypeSymbol to a NanoJS type */
-		public toNJSType(): NanoType {
+		public toNanoType(): NanoType {
 
 			if (this.toString() === "any") {
 				return TAny;
@@ -2014,7 +2014,7 @@ module TypeScript {
 			}
 
 			if (this.isArray()) {
-				return new TArray(this.getElementType().toNJSType());
+				return new TArray(this.getElementType().toNanoType());
 			}
 
 			if (this.isEnum()) {
@@ -2055,7 +2055,7 @@ module TypeScript {
 			if (this.kind === PullElementKind.ObjectType) {
 				var methods = this.getAllMembers(PullElementKind.Method, true);
 				var properties = this.getAllMembers(PullElementKind.Property, true);
-				var fields = methods.concat(properties).map(s => new TField(s.name, s.type.toNJSType()));	
+				var fields = methods.concat(properties).map(s => new TField(s.name, s.type.toNanoType()));	
 				return new TObject(fields);
 			}
 

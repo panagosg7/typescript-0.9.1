@@ -1414,7 +1414,7 @@ module TypeScript {
 			//NanoJS
 			if (this._emitInterfaces) {
 				var nJSParams = interfaceDecl.getTypeParameters().map((p: PullDecl) => p.getSymbol().type.toNJSTypeParameter());
-				var fs = interfaceDecl.getSymbol().type.getMembers().map(m => new TField(m.name, m.type.toNJSType()));
+				var fs = interfaceDecl.getSymbol().type.getMembers().map(m => new TField(m.name, m.type.toNanoType()));
 				var tRef = new TTypeReference(interfaceDeclAST.name.text(), nJSParams);
 				var tBody = new TObject(fs);
 				interfaceDeclAST.setTypeAnnotation(new TInterface(tRef, tBody));

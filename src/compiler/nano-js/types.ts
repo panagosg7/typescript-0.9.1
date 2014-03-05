@@ -151,7 +151,7 @@ module TypeScript {
 			var s = "";
 			s += this.name;
 			if (this.params && this.params.length > 0) {
-				s += "[ " + this.params.map(t => t.toString()).join(", ") + " ]";
+				s += "<" + this.params.map(t => t.toString()).join(", ") + ">";
 			}
 			return s;
 		}

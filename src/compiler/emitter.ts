@@ -1968,12 +1968,12 @@ module TypeScript {
             }
 
             this.recordSourceMappingEnd(classDecl);
-            this.emitComments(classDecl, false);
-            this.setContainer(temp);
-            this.thisClassNode = svClassNode;
+			this.emitComments(classDecl, false);
+			this.setContainer(temp);
+			this.thisClassNode = svClassNode;
 
-            this.popDecl(pullDecl);
-        }
+			this.popDecl(pullDecl);
+		}
 
 		//NanoJS - begin
 		public emitInterface(interfaceDecl: InterfaceDeclaration) {
@@ -1990,20 +1990,20 @@ module TypeScript {
 
 
 
-        private emitClassMembers(classDecl: ClassDeclaration): void {
-            // First, emit all the functions.
-            var lastEmittedMember: AST = null;
+		private emitClassMembers(classDecl: ClassDeclaration): void {
+			// First, emit all the functions.
+			var lastEmittedMember: AST = null;
 
-            for (var i = 0, n = classDecl.members.members.length; i < n; i++) {
-                var memberDecl = classDecl.members.members[i];
+			for (var i = 0, n = classDecl.members.members.length; i < n; i++) {
+				var memberDecl = classDecl.members.members[i];
 
-                if (memberDecl.nodeType() === NodeType.FunctionDeclaration) {
-                    var fn = <FunctionDeclaration>memberDecl;
+				if (memberDecl.nodeType() === NodeType.FunctionDeclaration) {
+					var fn = <FunctionDeclaration>memberDecl;
 
-                    if (hasFlag(fn.getFunctionFlags(), FunctionFlags.Method) && !fn.isSignature()) {
-                        this.emitSpaceBetweenConstructs(lastEmittedMember, fn);
+					if (hasFlag(fn.getFunctionFlags(), FunctionFlags.Method) && !fn.isSignature()) {
+						this.emitSpaceBetweenConstructs(lastEmittedMember, fn);
 
-                        if (!hasFlag(fn.getFunctionFlags(), FunctionFlags.Static)) {
+						if (!hasFlag(fn.getFunctionFlags(), FunctionFlags.Static)) {
                             this.emitPrototypeMember(fn, classDecl.name.actualText);
                         }
                         else { // static functions
