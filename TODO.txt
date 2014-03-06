@@ -1,5 +1,7 @@
 Nano types:
 
+0. Annotate classes with parameter types
+
 1. Add support for optional arguments.
 
 

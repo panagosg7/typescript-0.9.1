@@ -64,7 +64,7 @@ module TypeScript {
 
 		public toObject(): any {
 			var obj = {};
-			obj[AnnotKind[this._tag]] = this._content;
+			obj[AnnotKind[this._tag]] = this.getContent();
 			return obj;
 		}
 
@@ -206,7 +206,7 @@ module TypeScript {
 		}
 
 		public getContent(): string {
-			return this._content;
+			return "class " + this._content;
 		}
 
 	}
