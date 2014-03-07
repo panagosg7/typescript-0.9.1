@@ -16,15 +16,25 @@ module TypeScript {
 	}
 
 	export enum AnnotKind {
-		RawMeas,     // Measure
-		RawBind,     // Function / variable binder
-		RawExtern,   // External declaration
-		RawType,     // Data type definition
-		RawClass,	 // Class annotations
-		RawTAlias,   // Type alias
-		RawPAlias,   // Predicate alias
-		RawQual,     // Qualifier
-		RawInvt      // Invariant
+		RawMeas,		// Measure
+		RawBind,		// Function / variable binder
+		RawExtern,		// External declaration
+		RawType,		// Data type definition
+		RawClass,		// Class annotations
+		RawField,		// Field annotations
+		RawMethod,   	// Method annotations
+		RawConstructor,	// Method annotations
+		RawTAlias,   	// Type alias
+		RawPAlias,   	// Predicate alias
+		RawQual,     	// Qualifier
+		RawInvt      	// Invariant
+	}
+
+	export enum AnnotContext {
+		ClassMethodContext,		// Class method
+		ClassFieldContext,		// Class field
+		ClassContructorContext,	// Class constructor
+		OtherContext			// Rest
 	}
 
 	export class NanoAnnotation {
@@ -34,11 +44,23 @@ module TypeScript {
 		}
 
 		/** This will create a NanoAnnoation object based on user annotations */
-		public static createAnnotation(s: string): NanoAnnotation {
+		public static createAnnotation(s: string, ctx: AnnotContext): NanoAnnotation {
 			var pair = NanoAnnotation.stringTag(s);
 			switch (pair.fst()) {
-				case AnnotKind.RawBind: 
-					return new NanoBindAnnotation(pair.fst(), pair.snd()); 
+				case AnnotKind.RawBind: {
+					switch (ctx) {
+						case AnnotContext.ClassMethodContext:
+							return new NanoBindAnnotation(AnnotKind.RawMethod, pair.snd());
+						case AnnotContext.ClassFieldContext:
+							return new NanoBindAnnotation(AnnotKind.RawField, pair.snd());
+						case AnnotContext.ClassContructorContext:
+							return new NanoBindAnnotation(AnnotKind.RawConstructor, pair.snd());
+						case AnnotContext.OtherContext:
+							return new NanoBindAnnotation(pair.fst(), pair.snd());
+						default:
+							throw new Error("BUG: there is not default context");
+					}
+				}
 				case AnnotKind.RawClass:
 					return new NanoExplicitClassAnnotation(pair.snd());
 				default:
@@ -125,10 +147,14 @@ module TypeScript {
 					return this._binderName;
 				}
 				else {
-					throw new Error("bad nano-js binder(1): " + content);
+					console.log("Invalid nano-js annotation:");
+					console.log(content);
+					process.exit(1);
 				}
 			}
-			throw new Error("bad nano-js binder(0): " + content);
+			console.log("Invalid nano-js annotation:");
+			console.log(content);
+			process.exit(1);
 		}
 
 		//constructor(t: AnnotKind, s: string) {
@@ -142,6 +168,12 @@ module TypeScript {
 		}
 
 	}
+
+	////FIXME: Fill these up with the right toObject
+	//export class NanoMethodAnnotation extends NanoBindAnnotation { }
+	//export class NanoFieldAnnotation extends NanoBindAnnotation { }
+	//export class NanoConstructorAnnotation extends NanoBindAnnotation { }
+
 
 	export class NanoClassAnnotation extends NanoAnnotation { }
 

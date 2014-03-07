@@ -283,7 +283,7 @@ module TypeScript {
 		}
 
     /** Returns annotations of the current AST node */
-		public getNanoAnnotations(): NanoAnnotation[] {
+		public getNanoAnnotations(ctx: AnnotContext): NanoAnnotation[] {
 			var annStrings: string[] = [];
 			var pre = this.preComments();
 			if (pre) {
@@ -300,14 +300,14 @@ module TypeScript {
 				});
 			}
 			//TODO: possibly add check for multiple annotations on a single FunctionStmt etc.
-			return annStrings.map(s => NanoAnnotation.createAnnotation(s));
+			return annStrings.map(s => NanoAnnotation.createAnnotation(s, ctx));
 		}
 
     /** Returns all annotations (recursively) of the AST rooted at the current node */
-		public getAllNanoAnnotations(): NanoAnnotation[] {
+		public getAllNanoAnnotations(ctx: AnnotContext): NanoAnnotation[] {
 			var annots: NanoAnnotation[] = [];
 			TypeScript.getAstWalkerFactory().walk(this, function (cur: AST, parent: AST, walker: IAstWalker) {
-				annots = annots.concat(cur.getNanoAnnotations());
+				annots = annots.concat(cur.getNanoAnnotations(ctx));
 				return cur;
 			});
 			return annots;
@@ -322,7 +322,47 @@ module TypeScript {
 			});
 			return cmnts;
 		}
+
+
+		/** Names defined in this AST - This makes sense for nodes like VariableDeclaration 
+			So it will have to be reimplemented there. */ 
+		public definedNames(): string[] {
+			return [];
+		}
 		
+
+		/** Sanity check for variable / field definitions 
+			An definition is allowed to be missing the annotation. */
+		public sanityCheck(bindAnns: NanoBindAnnotation[]) {
+			//Do some sanity checks...
+			var definedNames = this.definedNames();
+			//console.log("DefinedNames: " + definedNames);
+			// 1. All binders match with exactly one variable being declared
+			bindAnns.forEach((b: NanoBindAnnotation) => {
+				//console.log("BinderName: " + b.getBinderName());
+				if (definedNames.indexOf(b.getBinderName()) < 0) {
+					console.log(this.getSourceSpan().toString());
+					console.log("Variable annotation binder for '" + b.getBinderName() +
+						"' does not correspond to any nearby variable declaration.");
+					process.exit(1);
+				}
+			});
+
+			// 2. No duplicate binders
+			var sortedBinds = bindAnns.map(b => b.getBinderName()).sort();
+			var results: string[] = [];
+			for (var i = 0; i < sortedBinds.length - 1; i++) {
+				if (sortedBinds[i + 1] == sortedBinds[i]) {
+					results.push(sortedBinds[i]);
+				}
+			}
+			if (results.length > 0) {
+				console.log(this.getSourceSpan().toString());
+				console.log("Duplicate type annotation for variable(s): " + results.join(", "));
+				process.exit(1);
+			}
+		}
+
 		//NanoJS - end
 
    }
@@ -418,15 +458,15 @@ module TypeScript {
 
 		//NanoJS - begin
 		public toNanoLValue(): NanoLValue {
-			return new NanoLVar(this.getSourceSpan(), this.getNanoAnnotations(), this.actualText);
+			return new NanoLVar(this.getSourceSpan(), this.getNanoAnnotations(AnnotContext.OtherContext), this.actualText);
 		}
 
 		public toNanoAST(): NanoId {
-			return new NanoId(this.getSourceSpan(), this.getNanoAnnotations(), this.actualText);
+			return new NanoId(this.getSourceSpan(), this.getNanoAnnotations(AnnotContext.OtherContext), this.actualText);
 		}
 
 		public toNanoExp(): NanoExpression {
-			return new NanoVarRef(this.getSourceSpan(), this.getNanoAnnotations(), this.toNanoAST());
+			return new NanoVarRef(this.getSourceSpan(), this.getNanoAnnotations(AnnotContext.OtherContext), this.toNanoAST());
 		}
 		//NanoJS - end
     }
@@ -478,11 +518,11 @@ module TypeScript {
 		public toNanoExp(): NanoExpression {
             switch (this.nodeType()) {
                 case NodeType.NullLiteral:
-					return new NanoNullLit(this.getSourceSpan(), this.getNanoAnnotations());
+					return new NanoNullLit(this.getSourceSpan(), this.getNanoAnnotations(AnnotContext.OtherContext));
                 case NodeType.FalseLiteral:
-					return new NanoBoolLit(this.getSourceSpan(), this.getNanoAnnotations(), false);
+					return new NanoBoolLit(this.getSourceSpan(), this.getNanoAnnotations(AnnotContext.OtherContext), false);
                 case NodeType.TrueLiteral:
-					return new NanoBoolLit(this.getSourceSpan(), this.getNanoAnnotations(), true);
+					return new NanoBoolLit(this.getSourceSpan(), this.getNanoAnnotations(AnnotContext.OtherContext), true);
                 default:
                     throw Errors.abstract();
             }
@@ -511,7 +551,7 @@ module TypeScript {
 
 		//NanoJS - begin
 		public toNanoExp() {
-			return new NanoThisRef(this.getSourceSpan(), this.getNanoAnnotations());
+			return new NanoThisRef(this.getSourceSpan(), this.getNanoAnnotations(AnnotContext.OtherContext));
 		}
 		//NanoJS - end
 
@@ -532,7 +572,7 @@ module TypeScript {
 
 		//NanoJS - begin
 		public toNanoExp() {
-			return new NanoSuperRef(this.getSourceSpan(), this.getNanoAnnotations());
+			return new NanoSuperRef(this.getSourceSpan(), this.getNanoAnnotations(AnnotContext.OtherContext));
 		}
 		//NanoJS - end
  
@@ -656,27 +696,27 @@ module TypeScript {
 		public toNanoExp(): NanoExpression {
 			switch (this.nodeType()) {
 				case NodeType.ObjectLiteralExpression:
-					return new NanoObjectLit(this.getSourceSpan(), this.getNanoAnnotations(), this.operand.toNanoMemList());
+					return new NanoObjectLit(this.getSourceSpan(), this.getNanoAnnotations(AnnotContext.OtherContext), this.operand.toNanoMemList());
 				case NodeType.PostIncrementExpression:
-					return new NanoUnaryAssignExpr(this.getSourceSpan(), this.getNanoAnnotations(), new NanoUnaryAssignOp(NanoUnaryAssignOpKind.PostfixInc), this.operand.toNanoLValue());
+					return new NanoUnaryAssignExpr(this.getSourceSpan(), this.getNanoAnnotations(AnnotContext.OtherContext), new NanoUnaryAssignOp(NanoUnaryAssignOpKind.PostfixInc), this.operand.toNanoLValue());
 				case NodeType.PreIncrementExpression:
-					return new NanoUnaryAssignExpr(this.getSourceSpan(), this.getNanoAnnotations(), new NanoUnaryAssignOp(NanoUnaryAssignOpKind.PrefixInc), this.operand.toNanoLValue());
+					return new NanoUnaryAssignExpr(this.getSourceSpan(), this.getNanoAnnotations(AnnotContext.OtherContext), new NanoUnaryAssignOp(NanoUnaryAssignOpKind.PrefixInc), this.operand.toNanoLValue());
 				case NodeType.PostDecrementExpression:
-					return new NanoUnaryAssignExpr(this.getSourceSpan(), this.getNanoAnnotations(), new NanoUnaryAssignOp(NanoUnaryAssignOpKind.PostfixDec), this.operand.toNanoLValue());
+					return new NanoUnaryAssignExpr(this.getSourceSpan(), this.getNanoAnnotations(AnnotContext.OtherContext), new NanoUnaryAssignOp(NanoUnaryAssignOpKind.PostfixDec), this.operand.toNanoLValue());
 				case NodeType.PreDecrementExpression:
-					return new NanoUnaryAssignExpr(this.getSourceSpan(), this.getNanoAnnotations(), new NanoUnaryAssignOp(NanoUnaryAssignOpKind.PrefixDec), this.operand.toNanoLValue());
+					return new NanoUnaryAssignExpr(this.getSourceSpan(), this.getNanoAnnotations(AnnotContext.OtherContext), new NanoUnaryAssignOp(NanoUnaryAssignOpKind.PrefixDec), this.operand.toNanoLValue());
 
 				case NodeType.NegateExpression:
-					return new NanoPrefixExpr(this.getSourceSpan(), this.getNanoAnnotations(), new NanoPrefixOp(NanoPrefixOpKind.PrefixMinus), this.operand.toNanoExp());
+					return new NanoPrefixExpr(this.getSourceSpan(), this.getNanoAnnotations(AnnotContext.OtherContext), new NanoPrefixOp(NanoPrefixOpKind.PrefixMinus), this.operand.toNanoExp());
 
 				case NodeType.LogicalNotExpression:
-					return new NanoPrefixExpr(this.getSourceSpan(), this.getNanoAnnotations(), new NanoPrefixOp(NanoPrefixOpKind.PrefixLNot), this.operand.toNanoExp());
+					return new NanoPrefixExpr(this.getSourceSpan(), this.getNanoAnnotations(AnnotContext.OtherContext), new NanoPrefixOp(NanoPrefixOpKind.PrefixLNot), this.operand.toNanoExp());
 					
 				case NodeType.ArrayLiteralExpression:
 					var list = <ASTList>this.operand;
-					return new NanoArrayLit(this.getSourceSpan(), this.getNanoAnnotations(), list.toNanoExp());
+					return new NanoArrayLit(this.getSourceSpan(), this.getNanoAnnotations(AnnotContext.OtherContext), list.toNanoExp());
 				case NodeType.TypeOfExpression:
-					return new NanoPrefixExpr(this.getSourceSpan(), this.getNanoAnnotations(), new NanoPrefixOp(NanoPrefixOpKind.PrefixTypeof), this.operand.toNanoExp());
+					return new NanoPrefixExpr(this.getSourceSpan(), this.getNanoAnnotations(AnnotContext.OtherContext), new NanoPrefixOp(NanoPrefixOpKind.PrefixTypeof), this.operand.toNanoExp());
 
 				// NOTE: For the moment cast expressions are ignored.
 				case NodeType.CastExpression:
@@ -725,7 +765,7 @@ module TypeScript {
 
 		//NanoJS - begin
 		public toNanoExp(): NanoExpression {
-			return new NanoNewExpr(this.getSourceSpan(), this.getNanoAnnotations(), this.target.toNanoExp(), this.arguments.toNanoExp());
+			return new NanoNewExpr(this.getSourceSpan(), this.getNanoAnnotations(AnnotContext.OtherContext), this.target.toNanoExp(), this.arguments.toNanoExp());
 		}
 		//NanoJS - begin
 
@@ -757,7 +797,7 @@ module TypeScript {
 
 		//NanoJS - begin
 		public toNanoExp(): NanoExpression {
-			return new NanoCallExpr(this.getSourceSpan(), this.getNanoAnnotations(), this.target.toNanoExp(), this.arguments.toNanoExp());	
+			return new NanoCallExpr(this.getSourceSpan(), this.getNanoAnnotations(AnnotContext.OtherContext), this.target.toNanoExp(), this.arguments.toNanoExp());	
 		}
 		//NanoJS - end
 
@@ -882,7 +922,7 @@ module TypeScript {
 				case NodeType.MemberAccessExpression: {
 					switch (this.operand2.nodeType()) {
 						case NodeType.Name:
-							return new NanoLDot(this.getSourceSpan(), this.getNanoAnnotations(), this.operand1.toNanoExp(), (<Identifier>this.operand2).actualText);
+							return new NanoLDot(this.getSourceSpan(), this.getNanoAnnotations(AnnotContext.OtherContext), this.operand1.toNanoExp(), (<Identifier>this.operand2).actualText);
 					}
 					throw new Error("UNIMMPLEMENTED:BinaryExpression:toNanoAST:MemberAccessExpression:op2-nonId");
 				}
@@ -897,11 +937,11 @@ module TypeScript {
 				case NodeType.MemberAccessExpression: {
 					switch (this.operand2.nodeType()) {
 						case NodeType.Name:
-							return new NanoLDot(this.getSourceSpan(), this.getNanoAnnotations(), this.operand1.toNanoExp(), (<Identifier>this.operand2).actualText);
+							return new NanoLDot(this.getSourceSpan(), this.getNanoAnnotations(AnnotContext.OtherContext), this.operand1.toNanoExp(), (<Identifier>this.operand2).actualText);
 					}
 				}
 				case NodeType.ElementAccessExpression: 
-					return new NanoLBracket(this.getSourceSpan(), this.getNanoAnnotations(), this.operand1.toNanoExp(), this.operand2.toNanoExp());
+					return new NanoLBracket(this.getSourceSpan(), this.getNanoAnnotations(AnnotContext.OtherContext), this.operand1.toNanoExp(), this.operand2.toNanoExp());
 				default: {
 					throw new Error("UNIMMPLEMENTED:BinaryExpression:toNanoLValue");
 				}
@@ -915,7 +955,7 @@ module TypeScript {
 				case NodeType.MemberAccessExpression: {
 					switch (this.operand2.nodeType()) {
 						case NodeType.Name:
-							return new NanoDotRef(this.getSourceSpan(), this.getNanoAnnotations(), 
+							return new NanoDotRef(this.getSourceSpan(), this.getNanoAnnotations(AnnotContext.OtherContext), 
 								this.operand1.toNanoExp(),
 								(<Identifier>this.operand2).toNanoAST());
 					}
@@ -923,13 +963,13 @@ module TypeScript {
 				}
 
 				case NodeType.AssignmentExpression: 
-					return new NanoAssignExpr(this.getSourceSpan(), this.getNanoAnnotations(), 
+					return new NanoAssignExpr(this.getSourceSpan(), this.getNanoAnnotations(AnnotContext.OtherContext), 
 						new NanoAssignOp(BinaryExpression.getTextForBinaryToken(this.nodeType())),
 						this.operand1.toNanoLValue(),
 						this.operand2.toNanoExp());
 
 				case NodeType.ElementAccessExpression: 
-					return new NanoBracketRef(this.getSourceSpan(), this.getNanoAnnotations(), this.operand1.toNanoExp(), this.operand2.toNanoExp());
+					return new NanoBracketRef(this.getSourceSpan(), this.getNanoAnnotations(AnnotContext.OtherContext), this.operand1.toNanoExp(), this.operand2.toNanoExp());
 
 				case NodeType.AddExpression:
 				case NodeType.SubtractExpression:
@@ -944,7 +984,7 @@ module TypeScript {
 				case NodeType.LogicalOrExpression:
 				case NodeType.LogicalAndExpression:
 				case NodeType.NotEqualsWithTypeConversionExpression:
-					return new NanoInfixExpr(this.getSourceSpan(), this.getNanoAnnotations(), 
+					return new NanoInfixExpr(this.getSourceSpan(), this.getNanoAnnotations(AnnotContext.OtherContext), 
 						new NanoInfixOp(BinaryExpression.getTextForBinaryToken(this.nodeType())),
 						this.operand1.toNanoExp(),
 						this.operand2.toNanoExp());
@@ -953,7 +993,7 @@ module TypeScript {
 				case NodeType.SubtractAssignmentExpression:
 				case NodeType.DivideAssignmentExpression:
 				case NodeType.MultiplyAssignmentExpression:
-					return new NanoAssignExpr(this.getSourceSpan(), this.getNanoAnnotations(), 
+					return new NanoAssignExpr(this.getSourceSpan(), this.getNanoAnnotations(AnnotContext.OtherContext), 
 						new NanoAssignOp(BinaryExpression.getTextForBinaryToken(this.nodeType())),
 						this.operand1.toNanoLValue(),
 						this.operand2.toNanoExp());
@@ -970,17 +1010,17 @@ module TypeScript {
 					switch (this.operand1.nodeType()) {
 						case NodeType.Name:
 							return new NanoASTList( [
-								new NanoPropId(this.getSourceSpan(), this.getNanoAnnotations(), (<Identifier>this.operand1).toNanoAST()),
+								new NanoPropId(this.getSourceSpan(), this.getNanoAnnotations(AnnotContext.OtherContext), (<Identifier>this.operand1).toNanoAST()),
 								this.operand2.toNanoExp()
 							]);
 						case NodeType.NumericLiteral:
 							return new NanoASTList([
-								new NanoPropNum(this.getSourceSpan(), this.getNanoAnnotations(), (<NumberLiteral>this.operand1).value),
+								new NanoPropNum(this.getSourceSpan(), this.getNanoAnnotations(AnnotContext.OtherContext), (<NumberLiteral>this.operand1).value),
 								this.operand2.toNanoExp()
 							]);
 						case NodeType.StringLiteral:
 							return new NanoASTList([
-								new NanoPropString(this.getSourceSpan(), this.getNanoAnnotations(), (<StringLiteral>this.operand1).actualText),
+								new NanoPropString(this.getSourceSpan(), this.getNanoAnnotations(AnnotContext.OtherContext), (<StringLiteral>this.operand1).actualText),
 								this.operand2.toNanoExp()
 							]);
 					}
@@ -1050,15 +1090,15 @@ module TypeScript {
 		//NanoJS - begin
 		public toNanoExp(): NanoExpression {
 
-      //console.log("NumberLiteral: " + this.getNanoAnnotations().map(a =>
+      //console.log("NumberLiteral: " + this.getNanoAnnotations(AnnotContext.OtherContext).map(a =>
       //      JSON.stringify(a.toObject())));
 
 			if (this.text().indexOf(".") === -1) {
 			//No decimal part
-				return new NanoIntLit(this.getSourceSpan(), this.getNanoAnnotations(), this.value);
+				return new NanoIntLit(this.getSourceSpan(), this.getNanoAnnotations(AnnotContext.OtherContext), this.value);
 			}
 			else {
-				return new NanoNumLit(this.getSourceSpan(), this.getNanoAnnotations(), this.value);
+				return new NanoNumLit(this.getSourceSpan(), this.getNanoAnnotations(AnnotContext.OtherContext), this.value);
 			}
 		}
 		//NanoJS - end
@@ -1111,7 +1151,7 @@ module TypeScript {
 
 		//NanoJS - begin
 		public toNanoExp(): NanoStringLit {
-			return new NanoStringLit(this.getSourceSpan(), this.getNanoAnnotations(), this.actualText);
+			return new NanoStringLit(this.getSourceSpan(), this.getNanoAnnotations(AnnotContext.OtherContext), this.actualText);
 		}
 		//NanoJS - end
 
@@ -1274,12 +1314,24 @@ module TypeScript {
 				this.id.toNanoAST(), (this.init) ? this.init.toNanoExp() : null);
 		}
 
+
+		public definedNames(): string[] {
+			return [this.id.text()];
+		}
+
 		public toNanoClassElt(): NanoClassElt {
+			var anns = this.getNanoAnnotations(AnnotContext.ClassFieldContext);
+			var binderNames = <NanoBindAnnotation[]>anns.filter(b => b.getKind() === AnnotKind.RawField);
+			// Do some checks on the binder names etc. 
+			// Keep in mind that the annotation is allowed to be missing
+			this.sanityCheck(binderNames);
 			// Adding the annotations in the enclosing NanoVarDecl instead of the top-level.
 			return new NanoMemberVarDecl(this.getSourceSpan(), [], 
 				hasFlag(this.getVarFlags(), VariableFlags.Public),
 				hasFlag(this.getVarFlags(), VariableFlags.Static),
-				new NanoVarDecl(this.getSourceSpan(), this.getNanoAnnotations(), this.id.toNanoAST(), (this.init) ? this.init.toNanoExp() : null));
+				new NanoVarDecl(this.getSourceSpan(),
+					anns, this.id.toNanoAST(),
+					(this.init) ? this.init.toNanoExp() : null));
 		}
 		//NanoJS - end
     }
@@ -1404,7 +1456,7 @@ module TypeScript {
 		//TypeScript bunches up function expressions and statements. So we'll need 
 		//to give implementations for both and have the caller decide which one to use.
 		public toNanoExp(): NanoExpression {			
-			return new NanoFuncExpr(this.getSourceSpan(), this.getNanoAnnotations(), 
+			return new NanoFuncExpr(this.getSourceSpan(), this.getNanoAnnotations(AnnotContext.OtherContext), 
 				(this.name) ? this.name.toNanoAST() : null,
 				<NanoASTList<NanoId>>this.arguments.toNanoAST(),
 				new NanoASTList([this.block.toNanoStmt()]));
@@ -1424,7 +1476,7 @@ module TypeScript {
 			}
 	
 			var name = this.name.text();
-			var anns = this.getNanoAnnotations();
+			var anns = this.getNanoAnnotations(AnnotContext.OtherContext);
 			var bindAnns: NanoBindAnnotation[] = <NanoBindAnnotation[]> anns.filter(a => a.getKind() === AnnotKind.RawBind);
 			var bindAnnNames: string[] = bindAnns.map(a => (<NanoBindAnnotation>a).getBinderName());
 
@@ -1446,7 +1498,9 @@ module TypeScript {
 				return !(a < b || b < a);
 			}
 			var name = (this.isConstructor) ? "constructor" : this.name.text();
-			var anns = this.getNanoAnnotations();
+			// Remember to use the right context
+			var annKind = (this.isConstructor) ? AnnotContext.ClassContructorContext : AnnotContext.ClassMethodContext;
+			var anns = this.getNanoAnnotations(annKind);
 			var bindAnns: NanoBindAnnotation[] = <NanoBindAnnotation[]> anns.filter(a => a.getKind() === AnnotKind.RawBind);
 			var bindAnnNames: string[] = bindAnns.map(a => (<NanoBindAnnotation>a).getBinderName());
 
@@ -1461,14 +1515,13 @@ module TypeScript {
 				var symb = decl.getSymbol();
 
 
-				this.arguments.members.map(function (m: AST) {
-					if (m.nodeType() === NodeType.Parameter) {
-						var param = <Parameter>m;
-						var d: PullDecl = astHelper.getDeclForAST(param);
-//HEREHER
-							//hasFlag( , FunctionFlags.Private));
-					}
-				});
+				// FIXME: What is this ???
+				//this.arguments.members.map(function (m: AST) {
+				//	if (m.nodeType() === NodeType.Parameter) {
+				//		var param = <Parameter>m;
+				//		var d: PullDecl = astHelper.getDeclForAST(param);
+				//	}
+				//});
 
 
 				return new NanoConstructor(this.getSourceSpan(), anns,
@@ -1515,7 +1568,7 @@ module TypeScript {
 		public toNanoAST(): NanoAST {
 		//Top-level will be statements
 			var nanoAST = this.moduleElements.toNanoStmt();
-			nanoAST.addAnnotations(this.getAllNanoAnnotations());
+			nanoAST.addAnnotations(this.getAllNanoAnnotations(AnnotContext.OtherContext));
 			return nanoAST;
 		}
 		//NanoJS - end
@@ -1717,7 +1770,7 @@ module TypeScript {
 
 			//Class annotation:
 
-			var originalAnnots = this.getNanoAnnotations();
+			var originalAnnots = this.getNanoAnnotations(AnnotContext.OtherContext);
 
 			//Remove all class annotations and keep the rest
 			var restAnnots: NanoAnnotation[] = originalAnnots.filter(a => a.getKind() !== AnnotKind.RawClass);
@@ -1753,6 +1806,7 @@ module TypeScript {
 			}
 			else if (classAnnots.length === 1) {
 			//TODO: Add sanity checks here - do these annotations agree with the TypeScript ones?
+			//This might not be very straightforward because we might need to parse refinement types.
 				finalAnnot = <NanoExplicitClassAnnotation> classAnnots[0];
 			}
 			else {
@@ -1862,9 +1916,9 @@ module TypeScript {
 
 		//NanoJS - begin
 		public toNanoStmt(): NanoExprStmt {
-			//console.log("ExprStmt: " + this.getNanoAnnotations().map(a =>
+			//console.log("ExprStmt: " + this.getNanoAnnotations(AnnotContext.OtherContext).map(a =>
 			//      JSON.stringify(a.toObject())));
-			return new NanoExprStmt(this.getSourceSpan(), this.getNanoAnnotations(), this.expression.toNanoExp());
+			return new NanoExprStmt(this.getSourceSpan(), this.getNanoAnnotations(AnnotContext.OtherContext), this.expression.toNanoExp());
 		}
 		//NanoJS - end
 
@@ -1917,35 +1971,7 @@ module TypeScript {
 		}
 
 		//NanoJS - begin
-
-		private sanityCheck(bindAnns: NanoBindAnnotation[]) {
-			//Next, do some sanity checks...
-			var definedNames = this.definedNames();
-			// 1. All binders match with exactly one variable being declared
-			bindAnns.forEach((b: NanoBindAnnotation) => {
-				if (definedNames.indexOf(b.getBinderName()) < 0) {
-					console.log(this.getSourceSpan().toString());
-					console.log("Variable annotation binder for '" + b.getBinderName() +
-						"' does not correspond to any nearby variable declaration.");
-					process.exit(1);
-				}
-			});
-
-			// 2. No duplicate binders
-			var sortedBinds = bindAnns.map(b => b.getBinderName()).sort();
-			var results: string[] = [];
-			for (var i = 0; i < sortedBinds.length - 1; i++) {
-				if (sortedBinds[i + 1] == sortedBinds[i]) {
-					results.push(sortedBinds[i]);
-				}
-			}
-			if (results.length > 0) {
-				console.log(this.getSourceSpan().toString());
-				console.log("Duplicate type annotation for variable(s): " + results.join(", "));
-				process.exit(1);
-			}
-		}
-
+		//FIXME: This goes too deep !!!
 		private definedVars(): Identifier[] {
 			var definedIds: Identifier[] = [];
 			TypeScript.getAstWalkerFactory().walk(this, function (cur: AST, parent: AST, walker: IAstWalker) {
@@ -1958,13 +1984,13 @@ module TypeScript {
 			return definedIds;
 		}
 
-		private definedNames(): string[] {
+		public definedNames(): string[] {
 			return this.definedVars().map(id => id.text());
 		}
 
 		public toNanoForInit(): NanoForInit {
 			//Gather all annotations from the current node and all Bind annotations from the children nodes.
-			var anns = this.getAllNanoAnnotations();
+			var anns = this.getAllNanoAnnotations(AnnotContext.OtherContext);
 			var bindAnns: NanoBindAnnotation[] = <NanoBindAnnotation[]>anns.filter(a => a.getKind() === AnnotKind.RawBind);
 			var sortedBinds = bindAnns.map(b => b.getBinderName()).sort();
 			var noBindAnns: NanoAnnotation[] = <NanoBindAnnotation[]>anns.filter(a => a.getKind() !== AnnotKind.RawBind);
@@ -1980,7 +2006,7 @@ module TypeScript {
 
 		public toNanoStmt(): NanoStatement {
 			//Gather all annotations from the current node and all Bind annotations from the children nodes.
-			var anns = this.getAllNanoAnnotations();
+			var anns = this.getAllNanoAnnotations(AnnotContext.OtherContext);
 			var bindAnns: NanoBindAnnotation[] = <NanoBindAnnotation[]>anns.filter(a => a.getKind() === AnnotKind.RawBind);
 			var noBindAnns: NanoAnnotation[] = <NanoBindAnnotation[]>anns.filter(a => a.getKind() !== AnnotKind.RawBind);
 			//Sanity checks
@@ -2085,7 +2111,7 @@ module TypeScript {
 
 
 		public toNanoStmt(): NanoStatement {
-			return new NanoBlockStmt(this.getSourceSpan(), this.getNanoAnnotations(), this.statements.toNanoStmt());
+			return new NanoBlockStmt(this.getSourceSpan(), this.getNanoAnnotations(AnnotContext.OtherContext), this.statements.toNanoStmt());
 		}
 
     }
@@ -2152,7 +2178,7 @@ module TypeScript {
 
 		//NanoJS - begin
 		public toNanoStmt(): NanoStatement {
-			return new NanoWhileStmt(this.getSourceSpan(), this.getNanoAnnotations(), this.cond.toNanoExp(), this.body.toNanoStmt());
+			return new NanoWhileStmt(this.getSourceSpan(), this.getNanoAnnotations(AnnotContext.OtherContext), this.cond.toNanoExp(), this.body.toNanoStmt());
 		}
     }
 
@@ -2238,10 +2264,10 @@ module TypeScript {
 		//NanoJS - begin
 		public toNanoStmt(): NanoStatement {
 			if (this.elseBod) {
-				return new NanoIfStmt(this.getSourceSpan(), this.getNanoAnnotations(), this.cond.toNanoExp(), this.thenBod.toNanoStmt(), this.elseBod.toNanoStmt());
+				return new NanoIfStmt(this.getSourceSpan(), this.getNanoAnnotations(AnnotContext.OtherContext), this.cond.toNanoExp(), this.thenBod.toNanoStmt(), this.elseBod.toNanoStmt());
 			}
 			else {
-				return new NanoIfSingleStmt(this.getSourceSpan(), this.getNanoAnnotations(), this.cond.toNanoExp(), this.thenBod.toNanoStmt());
+				return new NanoIfSingleStmt(this.getSourceSpan(), this.getNanoAnnotations(AnnotContext.OtherContext), this.cond.toNanoExp(), this.thenBod.toNanoStmt());
 			}
 		}
 		//NanoJS - end
@@ -2280,7 +2306,7 @@ module TypeScript {
 		//NanoJS - begin
 		public toNanoStmt(): NanoStatement {
 			var ret = this.returnExpression ? this.returnExpression.toNanoExp() : null;
-			return new NanoReturnStmt(this.getSourceSpan(), this.getNanoAnnotations(), ret);
+			return new NanoReturnStmt(this.getSourceSpan(), this.getNanoAnnotations(AnnotContext.OtherContext), ret);
 		}
 		//NanoJS - end
 
@@ -2365,7 +2391,7 @@ module TypeScript {
 
 		//NanoJS - begin
 		public toNanoStmt(): NanoStatement {
-			return new NanoForStmt(this.getSourceSpan(), this.getNanoAnnotations(), this.init.toNanoForInit(),
+			return new NanoForStmt(this.getSourceSpan(), this.getNanoAnnotations(AnnotContext.OtherContext), this.init.toNanoForInit(),
 				this.cond.toNanoExp(),
 				this.incr.toNanoExp(),
 				this.body.toNanoStmt());
@@ -2524,7 +2550,7 @@ module TypeScript {
 
 		//NanoJS - begin
 		public toNanoAST(): NanoAST {
-			return new NanoId(this.getSourceSpan(), this.getNanoAnnotations(), (<Identifier>this.name).actualText);
+			return new NanoId(this.getSourceSpan(), this.getNanoAnnotations(AnnotContext.OtherContext), (<Identifier>this.name).actualText);
 		}
 		//NanoJS - end
     }
@@ -2672,7 +2698,7 @@ module TypeScript {
 
 		//NanoJS - begin
 		public toNanoStmt() {
-			return new NanoEmptyStmt(this.getSourceSpan(), this.getNanoAnnotations());
+			return new NanoEmptyStmt(this.getSourceSpan(), this.getNanoAnnotations(AnnotContext.OtherContext));
 		}
 		//NanoJS - end
 

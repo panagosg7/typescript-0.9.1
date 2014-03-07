@@ -23,8 +23,13 @@ class BB extends BA {
 
 class A<R,S> { 
 
-  /*@ f :: S */
+  /*@ f:: S */
   public f: S;
+
+  /*@ foo:: (R) => void */
+  public foo(x: R) {
+
+  } 
   
   /*@ constructor :: (x:A) => void */
   constructor(x: R) {
@@ -39,10 +44,16 @@ class B<X, Y, Z> extends A<number, Z> {
     super(1);
   }
 
+  public ggg(y: Z) {
+
+  }
+
 }
 
 var b = new B<string, boolean, number>("", true);
 
-b;
+function fooooo() { }
+
+var a =  1;
 
 //assert(a.f == 1);
