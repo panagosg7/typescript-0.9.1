@@ -23,7 +23,7 @@ module TypeScript {
 		RawClass,		// Class annotations
 		RawField,		// Field annotations
 		RawMethod,   	// Method annotations
-		RawConstructor,	// Method annotations
+		RawConstr,	// Method annotations
 		RawTAlias,   	// Type alias
 		RawPAlias,   	// Predicate alias
 		RawQual,     	// Qualifier
@@ -54,7 +54,7 @@ module TypeScript {
 						case AnnotContext.ClassFieldContext:
 							return new NanoBindAnnotation(AnnotKind.RawField, pair.snd());
 						case AnnotContext.ClassContructorContext:
-							return new NanoBindAnnotation(AnnotKind.RawConstructor, pair.snd());
+							return new NanoBindAnnotation(AnnotKind.RawConstr, pair.snd());
 						case AnnotContext.OtherContext:
 							return new NanoBindAnnotation(pair.fst(), pair.snd());
 						default:
