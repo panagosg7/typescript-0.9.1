@@ -62,7 +62,7 @@ module TypeScript {
 					}
 				}
 				case AnnotKind.RawClass:
-					return new NanoExplicitClassAnnotation(pair.snd());
+					return new NanoExplicitNamedTypeAnnotation(pair.snd());
 				default:
 					return new NanoGlobalAnnotation(pair.fst(), pair.snd()); 
 			}
@@ -113,7 +113,7 @@ module TypeScript {
 			switch (s) {
 				case "measure": return AnnotKind.RawMeas;
 				case "qualif": return AnnotKind.RawQual;
-				case "type": return AnnotKind.RawType;
+				case "interface": return AnnotKind.RawType;
 				case "alias": return AnnotKind.RawTAlias;
 				case "class": return AnnotKind.RawClass;
 				case "predicate": return AnnotKind.RawPAlias;
@@ -224,7 +224,7 @@ module TypeScript {
 	}
 
 	/** A class annotation that is provided by the user */
-	export class NanoExplicitClassAnnotation extends NanoClassAnnotation {
+	export class NanoExplicitNamedTypeAnnotation extends NanoClassAnnotation {
 
 		/** This is not a global annotation (cannot float to top-level). 
 			Needs to stick around a class declaration. */

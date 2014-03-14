@@ -1333,6 +1333,16 @@ module TypeScript {
 					anns, this.id.toNanoAST(),
 					(this.init) ? this.init.toNanoExp() : null));
 		}
+
+		//Meh... Just do the check
+		public interfaceEltSanityCheck() {
+			var anns = this.getNanoAnnotations(AnnotContext.ClassFieldContext);
+			var binderNames = <NanoBindAnnotation[]>anns.filter(b => b.getKind() === AnnotKind.RawField);
+			// Do some checks on the binder names etc. 
+			// Keep in mind that the annotation is allowed to be missing
+			this.sanityCheck(binderNames);
+		}
+	
 		//NanoJS - end
     }
 
@@ -1737,22 +1747,6 @@ module TypeScript {
 
 		//NanoJS - begin
 		public toNanoStmt() {
-
-			//TODO: gather field info
-
-			var symb: PullSymbol = astHelper.getDeclForAST(this).getSymbol();
-			if (symb && symb.type) {
-				var members = symb.type.getMembers();
-				members.forEach((m: PullSymbol) => {
-					//console.log(m.name 
-					//		+ "   Public flag: " + hasFlag(m.flags, VariableFlags.Public)
-					//		+ "   ClassProp flag: " + hasFlag(m.flags, VariableFlags.ClassProperty)
-					//		+ "   Private flag: " + hasFlag(d.flags, VariableFlags.Private)
-					//		+ "   PullElementFlags: " + TypeScript.hasFlag(d.flags, PullElementFlags.Private)
-					//		);
-				})
-			}
-
 			//Extends
 			var parent: Identifier = null;
 			if (this.extendsList && this.extendsList.members) {
@@ -1768,8 +1762,7 @@ module TypeScript {
 				(this.implementsList && this.implementsList.members) ? <Identifier[]>this.implementsList.members : [];
 			var implementsInterfacesIds = implementsInterfaces.map(i => <NanoId>i.toNanoAST());
 
-			//Class annotation:
-
+			//Class header annotations
 			var originalAnnots = this.getNanoAnnotations(AnnotContext.OtherContext);
 
 			//Remove all class annotations and keep the rest
@@ -1800,14 +1793,13 @@ module TypeScript {
 				}
 				else {
 					//This class does not extend anyone.
-					finalAnnot = new NanoInferredClassAnnotation(this.name,
-						typeParams, null);
+					finalAnnot = new NanoInferredClassAnnotation(this.name, typeParams, null);
 				}
 			}
 			else if (classAnnots.length === 1) {
 			//TODO: Add sanity checks here - do these annotations agree with the TypeScript ones?
 			//This might not be very straightforward because we might need to parse refinement types.
-				finalAnnot = <NanoExplicitClassAnnotation> classAnnots[0];
+				finalAnnot = <NanoExplicitNamedTypeAnnotation> classAnnots[0];
 			}
 			else {
 				console.log(this.getSourceSpan().toString());
@@ -1828,29 +1820,124 @@ module TypeScript {
 		//NanoJS - end
     }
 
-    export class InterfaceDeclaration extends TypeDeclaration {
-        constructor(name: Identifier,
-                    typeParameters: ASTList,
-                    members: ASTList,
-                    extendsList: ASTList,
-                    implementsList: ASTList,
-                    public isObjectTypeLiteral: boolean) {
-            super(name, typeParameters, extendsList, implementsList, members);
-        }
+	export class InterfaceDeclaration extends TypeDeclaration {
+		constructor(name: Identifier,
+			typeParameters: ASTList,
+			members: ASTList,
+			extendsList: ASTList,
+			implementsList: ASTList,
+			public isObjectTypeLiteral: boolean) {
+			super(name, typeParameters, extendsList, implementsList, members);
+		}
 
-        public nodeType(): NodeType {
-            return NodeType.InterfaceDeclaration;
-        }
+		public nodeType(): NodeType {
+			return NodeType.InterfaceDeclaration;
+		}
 
-		//NanoJS: change should emit for user-defined interfaces. 
-        public shouldEmit(): boolean {
+		//NanoJS: change should emit for user-defined interfaces.
+		public shouldEmit(): boolean {
 			return this.hasTypeAnnotation();
-            //return false;
-        }
+			//return false;
+		}
 
-        public emit(emitter: Emitter): void {
-            emitter.emitInterface(this);
-        }
+		public emit(emitter: Emitter): void {
+			emitter.emitInterface(this);
+		}
+
+		//NanoJS - begin
+		public toNanoStmt(): NanoStatement {
+			//Extends
+			var parent: Identifier = null;
+			if (this.extendsList && this.extendsList.members) {
+				if (this.extendsList.members.length == 1) {
+					parent = <Identifier>this.extendsList.members[0];
+				}
+				else {
+					throw new Error("UNIMPLEMENTED: InterfaceDeclaration.toNanoStmt can only extend a single class.");
+				}
+			}
+			//Implements
+			var implementsInterfaces: Identifier[] = (this.implementsList && this.implementsList.members)
+				? <Identifier[]>this.implementsList.members : <Identifier[]>[];
+			var implementsInterfacesIds = implementsInterfaces.map(i => <NanoId>i.toNanoAST());
+
+			//Interface header annotations
+			var originalAnnots = this.getNanoAnnotations(AnnotContext.OtherContext);
+
+			//Is there a interface annotation given?
+			var headerAnnots: NanoAnnotation[] = originalAnnots.filter(a => a.getKind() === AnnotKind.RawType);
+			var restAnnots: NanoAnnotation[] = originalAnnots.filter(a => a.getKind() !== AnnotKind.RawType);
+			var headerAnnotStr = "";
+
+			var typeParams: TypeParameter[] = this.typeParameters ? <TypeParameter[]>(this.typeParameters.members) : <TypeParameter[]>[];
+			var typeParamStr = typeParams.map(p => p.name.text()).join(", ");
+			if (typeParams.length > 0) {
+				typeParamStr = "<" + typeParamStr + ">"; 
+			}
+
+			var extendsType: NanoType = null;
+
+			//No class annotation given - generate one based on class information from TypeScript.
+			if (headerAnnots.length === 0) {
+				if (!this.extendsList || this.extendsList.members.length === 0) {
+					headerAnnotStr = "interface " + this.name.text() + " " + typeParamStr + " " ;
+				}
+				else if (this.extendsList && this.extendsList.members.length === 1) {
+					//This class extends another one.
+					var baseNameDecl = this.extendsList.members[0];
+					var baseName = baseNameDecl.nodeType() === NodeType.InvocationExpression ? (<InvocationExpression>baseNameDecl).target : baseNameDecl;
+					switch (baseName.nodeType()) {
+						case NodeType.Name:
+						case NodeType.GenericType:
+							var baseSymbol = astHelper.getSymbolForAST(baseNameDecl);
+							extendsType = baseSymbol.type.toNanoType();
+							headerAnnotStr = "interface " + this.name.text() + " " + typeParamStr + " extends " + extendsType.toString() + " ";
+							break;
+						default:
+							throw new Error("BUG: An interface cannot extend a " + NodeType[baseName.nodeType()]);
+					}
+				}
+				else if (this.extendsList && this.extendsList.members.length > 1) {
+					throw new Error("UNIMPLEMENTED: An interface cannot extend multiple interfaces.");
+				}
+			}
+			//Use the given annotations
+			else if (headerAnnots.length === 1) {
+			//TODO: Add sanity checks here - do these annotations agree with the TypeScript ones?
+			//This might not be very straightforward because we might need to parse refinement types.
+				var headerAnnot = <NanoExplicitNamedTypeAnnotation> headerAnnots[0];
+				headerAnnotStr = "interface " + headerAnnot.getContent() + " ";
+			}
+			else {
+				console.log(this.getSourceSpan().toString());
+				console.log("Interface '" + this.name.text() + "' has multiple interface annoatations.");
+				process.exit(1);
+			}
+
+			//Body of the interface declaration
+			var members: string[] = this.members.members.map(m => {
+				var v = <VariableDeclarator> m;
+				//If there is no annotation
+				var anns = v.getNanoAnnotations(AnnotContext.OtherContext);
+				if (anns.length === 0) {
+					var eltSymbol = astHelper.getSymbolForAST(v);
+					return eltSymbol.name + ": " + eltSymbol.type.toNanoType().toString();
+				}
+				//Annotation provided by user
+				else {
+					v.interfaceEltSanityCheck();
+					var ann = anns[0];
+					// XXX: String HACK
+					return ann.getContent().replace("::", ":");
+				}
+			});
+
+			var membersStr = members.join(", ");
+			var finalAnnotStr = headerAnnotStr + "{ " + membersStr + " }"; 
+			restAnnots.push(new NanoBindAnnotation(AnnotKind.RawType, finalAnnotStr));
+			return new NanoEmptyStmt(this.getSourceSpan(), restAnnots)
+		}
+		//NanoJS - end
     
     }
 

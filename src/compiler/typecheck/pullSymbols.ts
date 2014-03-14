@@ -1996,7 +1996,7 @@ module TypeScript {
 		//TS to Nano - begin
 
 		/** toNJSType: Convert a PullTypeSymbol to a NanoJS type */
-		public toNanoType(): NanoType {
+		public toNanoType(): Serializable {
 
 			if (this.toString() === "any") {
 				return TAny;

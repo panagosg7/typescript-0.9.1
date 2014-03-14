@@ -3,13 +3,19 @@
 
 module TypeScript {
 
-	export interface NanoType {
+	export interface Serializable {
 		toString(): string;
+	}
+
+	export class NanoType implements Serializable {
+		public toString(): string {
+			throw new Error("BUG: Abstract in NanoType toString()");
+		}
 	}
 
 	export class BoundedNanoType {
 
-		constructor(private symbol: string, private type: NanoType) { }
+		constructor(private symbol: string, private type: Serializable) { }
 
 		public toString() {
 			return this.symbol + ": " + this.type.toString();
@@ -17,8 +23,10 @@ module TypeScript {
 
 	}
 
-	export class TError implements NanoType {
-		constructor(private msg: string) { }
+	export class TError extends NanoType {
+		constructor(private msg: string) {
+			super();
+		}
 
 		public toString(): string {
 			return "Error type: " + this.msg;
@@ -26,7 +34,7 @@ module TypeScript {
 
 	}
 
-	export class TAnyC implements NanoType {
+	export class TAnyC extends NanoType {
 
 		public toString(): string {
 			return "top";
@@ -36,7 +44,7 @@ module TypeScript {
 
 	export var TAny = new TAnyC();
 
-	export class TNumberC implements NanoType {
+	export class TNumberC extends NanoType {
 
 		public toString(): string {
 			return "number";
@@ -46,7 +54,7 @@ module TypeScript {
 
 	export var TNumber = new TNumberC();
 
-	export class TStringC implements NanoType {
+	export class TStringC extends NanoType {
 
 		public toString(): string {
 			return "string";
@@ -56,7 +64,7 @@ module TypeScript {
 
 	export var TString = new TStringC();
 
-	export class TBooleanC implements NanoType {
+	export class TBooleanC extends NanoType {
 
 		public toString(): string {
 			return "boolean";
@@ -66,7 +74,7 @@ module TypeScript {
 
 	export var TBoolean = new TBooleanC();
 
-	export class TVoidC implements NanoType {
+	export class TVoidC extends NanoType {
 
 		public toString(): string {
 			return "void";
@@ -79,13 +87,15 @@ module TypeScript {
 
 
 	export class TField {
-		constructor(public symbol: string, public type: NanoType) { }
+		constructor(public symbol: string, public type: Serializable) { }
 	}
 
 
-	export class TObject implements NanoType {
+	export class TObject extends NanoType {
 
-		constructor(public fields: TField[]) { }
+		constructor(public fields: TField[]) {
+			super();
+		}
 
 		public toString(): string {
 			var s = "";
@@ -99,7 +109,7 @@ module TypeScript {
 
 	export class TFunctionSigMember {
 
-		constructor(private tParams: TTypeParam[], private argTs: BoundedNanoType[], private returnT: NanoType) { }
+		constructor(private tParams: TTypeParam[], private argTs: BoundedNanoType[], private returnT: Serializable) { }
 
 		public toString(): string {
 			var s = "";
@@ -115,9 +125,11 @@ module TypeScript {
 
 	}
 
-	export class TFunctionSig implements NanoType {
+	export class TFunctionSig extends NanoType {
 
-		constructor(private signatures: TFunctionSigMember[]) { }
+		constructor(private signatures: TFunctionSigMember[]) {
+			super();
+		}
 
 		public toString(): string {
 			if (this.signatures && this.signatures.length > 0) {
@@ -133,9 +145,11 @@ module TypeScript {
 
 	}
 
-	export class TArray implements NanoType {
+	export class TArray extends NanoType {
 
-		constructor(private eltT: NanoType) { }
+		constructor(private eltT: Serializable) {
+			super();
+		}
 
 		public toString(): string {
 			return "[ " + this.eltT.toString() + " ]";
@@ -143,9 +157,11 @@ module TypeScript {
 
 	}
 
-	export class TTypeReference implements NanoType {
+	export class TTypeReference extends NanoType {
 
-		constructor(private name: string, private params: TTypeParam[]) { }
+		constructor(private name: string, private params: TTypeParam[]) {
+			super();
+		}
 
 		public toString(): string {
 			var s = "";
@@ -158,7 +174,7 @@ module TypeScript {
 
 	}
 
-	export class TInterface implements NanoType {
+	export class TInterface implements Serializable {
 
 		constructor(private ref: TTypeReference, private type: TObject) { }
 
@@ -168,11 +184,63 @@ module TypeScript {
 
 	}
 
+	export class TTVar extends NanoType {
+
+		constructor(private name: string) {
+			super();
+		}
+
+		public toString() {
+			return name;
+		}
+	}
+
+
 	export class TTypeParam {
 		constructor(public name: string) { }
 
 		public toString(): string {
 			return this.name;
+		}
+	}
+
+	export class TTDef implements Serializable {
+		constructor(public name: string, public pars: TTypeParam[], private proto: TParentType, private elts: TElt[]) { }
+
+		public toString(): string {
+			var s = "";
+			s += name;
+			s += " ";
+			if (this.pars && this.pars.length > 0) {
+				s += "[ " + this.pars.map(a => a.toString()).join(", ") + " ] ";
+			}
+			//XXX: not implemented yet in the nano parser
+			if (this.proto) {
+				s += this.proto.toString
+			}
+			return ;
+		}
+
+	}
+
+	export class TParentType implements Serializable {
+		constructor(private name: string, private targs: NanoType[]) { }
+
+		public toString(): string {
+			return this.name + " " + this.targs.map(a => a.toString()).join(", ");			
+		}
+	}
+
+	export class TElt implements Serializable {
+		constructor(private name: string,
+			private access: boolean,			// private / public
+			private mutability: boolean,		// mutability modifier
+			private type: NanoType) { }
+
+		//NOTE: mutability: by default interface fields are mutable.
+
+		public toString(): string {
+			return this.name + ": "	+ this.type.toString();
 		}
 	}
 

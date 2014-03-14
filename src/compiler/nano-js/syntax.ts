@@ -73,12 +73,12 @@ module TypeScript {
 		public toObject(): any {
 			return [
 				[this.span.toObject(), this.ann.map(a => a.toObject())],
-				this.x.toObject(),
+				this.name.toObject(),
 				(this.exp) ? this.exp.toObject() : null
 			];
 		}
 
-		constructor(public span: NanoSourceSpan, public ann: NanoAnnotation[], public x: NanoId, public exp?: NanoExpression) {
+		constructor(public span: NanoSourceSpan, public ann: NanoAnnotation[], public name: NanoId, public exp?: NanoExpression) {
 			super();
 		}
 	}
@@ -820,9 +820,6 @@ module TypeScript {
 			super();
 		}
 	}
-
-
-
 
 
 
