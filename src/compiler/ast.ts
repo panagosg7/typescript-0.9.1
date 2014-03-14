@@ -1880,7 +1880,7 @@ module TypeScript {
 			//No class annotation given - generate one based on class information from TypeScript.
 			if (headerAnnots.length === 0) {
 				if (!this.extendsList || this.extendsList.members.length === 0) {
-					headerAnnotStr = "interface " + this.name.text() + " " + typeParamStr + " " ;
+					headerAnnotStr = this.name.text() + " " + typeParamStr + " " ;
 				}
 				else if (this.extendsList && this.extendsList.members.length === 1) {
 					//This class extends another one.
@@ -1891,7 +1891,7 @@ module TypeScript {
 						case NodeType.GenericType:
 							var baseSymbol = astHelper.getSymbolForAST(baseNameDecl);
 							extendsType = baseSymbol.type.toNanoType();
-							headerAnnotStr = "interface " + this.name.text() + " " + typeParamStr + " extends " + extendsType.toString() + " ";
+							headerAnnotStr = this.name.text() + " " + typeParamStr + " extends " + extendsType.toString() + " ";
 							break;
 						default:
 							throw new Error("BUG: An interface cannot extend a " + NodeType[baseName.nodeType()]);
@@ -1906,7 +1906,7 @@ module TypeScript {
 			//TODO: Add sanity checks here - do these annotations agree with the TypeScript ones?
 			//This might not be very straightforward because we might need to parse refinement types.
 				var headerAnnot = <NanoExplicitNamedTypeAnnotation> headerAnnots[0];
-				headerAnnotStr = "interface " + headerAnnot.getContent() + " ";
+				headerAnnotStr = headerAnnot.getContent() + " ";
 			}
 			else {
 				console.log(this.getSourceSpan().toString());
