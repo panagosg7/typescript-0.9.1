@@ -7,7 +7,11 @@ Nano types:
 
 Nano AST:
 
-1. enum
+1. Enumerations
+
+2. Add check to interface and their annots so that the names match
+
+3. Add '#' in front of emitted named types
 
 2. Move to aeson-0.7, which has a different format: { content: ..., tag: ... }
 
