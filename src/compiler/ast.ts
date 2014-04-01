@@ -1327,7 +1327,6 @@ module TypeScript {
 			this.sanityCheck(binderNames);
 			// Adding the annotations in the enclosing NanoVarDecl instead of the top-level.
 			return new NanoMemberVarDecl(this.getSourceSpan(), [], 
-				hasFlag(this.getVarFlags(), VariableFlags.Public),
 				hasFlag(this.getVarFlags(), VariableFlags.Static),
 				new NanoVarDecl(this.getSourceSpan(),
 					anns, this.id.toNanoAST(),
@@ -1542,7 +1541,6 @@ module TypeScript {
 
 				//console.log(this.arguments.members.map(m => NodeType[m.nodeType()]));
 				return new NanoMemberMethDecl(this.getSourceSpan(), anns, 
-					hasFlag(this.getFunctionFlags(), FunctionFlags.Public),
 					hasFlag(this.getFunctionFlags(), FunctionFlags.Static),
 					<NanoId>this.name.toNanoAST(),
 					<NanoASTList<NanoId>>this.arguments.toNanoAST(),

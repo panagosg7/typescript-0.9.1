@@ -7,10 +7,6 @@ Nano types:
 
 Fixes:
 
-- Add '#' in front of emitted named types
-
-- Remove 'public/private' emitted field
-
 
 Nano AST:
 
@@ -19,5 +15,3 @@ Nano AST:
 2. Add check to interface and their annots so that the names match
 
 3. Move to aeson-0.7, which has a different format: { content: ..., tag: ... }
-
-4. Fix duplicate annotation check for class members.

@@ -785,14 +785,13 @@ module TypeScript {
 			return {
 				MemberVarDecl: [
 					[this.span.toObject(), this.ann.map(a => a.toObject())],
-					this.mod,
 					this.sta,
 					this.vardecl.toObject()
 				]
 			};
 		}
 
-		constructor(public span: NanoSourceSpan, public ann: NanoAnnotation[], public mod: boolean, public sta: boolean, public vardecl: NanoVarDecl) {
+		constructor(public span: NanoSourceSpan, public ann: NanoAnnotation[], public sta: boolean, public vardecl: NanoVarDecl) {
 			super();
 		}
 	}
@@ -803,7 +802,6 @@ module TypeScript {
 			return {
 				MemberMethDecl: [
 					[this.span.toObject(), this.ann.map(a => a.toObject())],
-					this.mod,
 					this.sta,
 					this.name.toObject(),
 					this.args.toObject(),
@@ -812,7 +810,7 @@ module TypeScript {
 			};
 		}
 
-		constructor(public span: NanoSourceSpan, public ann: NanoAnnotation[], public mod: boolean,
+		constructor(public span: NanoSourceSpan, public ann: NanoAnnotation[],
 			public sta: boolean,
 			public name: NanoId,
 			public args: NanoASTList<NanoId>,
