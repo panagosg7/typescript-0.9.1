@@ -10,6 +10,8 @@ Fixes:
 
 Nano AST:
 
+0. Add source position for comments for better debugging.
+
 1. Enumerations
 
 2. Anonymous functions
