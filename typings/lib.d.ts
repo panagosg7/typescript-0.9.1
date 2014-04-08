@@ -9195,3 +9195,5 @@ declare function random() : number;
 declare function pos() : number;
 declare function nth(b:any[],i:number):any;
 declare function cons(hd:any,tl:any[]):any[];
+declare function requires(b: boolean): void;
+declare function ensures(b: boolean): void;

@@ -10,6 +10,8 @@ Fixes:
 
 Nano AST:
 
+0. Add "not equals expression" (!==) 
+
 1. Enumerations
 
 2. Anonymous functions
