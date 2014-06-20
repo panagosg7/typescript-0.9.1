@@ -1,3 +1,6 @@
+### This is a deprecated, non-maintained version based on TypeScript 0.9.1. The newer version is based on Typescript 1.0 and can be found here: https://github.com/panagosg7/TypeScript
+
+
 **This is a fork of the [TypeScript](https://typescript.codeplex.com/) compiler, a Scalable JavaScript variant with types, classes and modules.**
 
 It has been modified to work as a front-end to the [language-ecmascript](https://github.com/UCSD-PL/language-ecmascript) and [NanoJS](https://github.com/UCSD-PL/nano-js). More information as to how to use it for this purpose can be found [here](https://github.com/UCSD-PL/nano-js).
